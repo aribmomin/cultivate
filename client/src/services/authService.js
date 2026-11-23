@@ -1,7 +1,7 @@
 import { apiClient } from './apiClient';
 
-const AUTH_STORAGE_KEY = 'terralearn_auth_user_v1';
-const TOKEN_STORAGE_KEY = 'terralearn_auth_token_v1';
+const AUTH_STORAGE_KEY = 'cultivate_auth_user_v1';
+const TOKEN_STORAGE_KEY = 'cultivate_auth_token_v1';
 
 export const DEMO_PERSONAS = [
   {
@@ -27,10 +27,10 @@ export const DEMO_PERSONAS = [
   {
     id: 'user-sarah',
     name: 'Dr. Sarah Jenkins',
-    email: 'sarah.jenkins@terralearn.org',
+    email: 'sarah.jenkins@cultivate.org',
     role: 'admin',
     roleLabel: 'Curriculum Administrator',
-    institution: 'TerraLearn Foundation',
+    institution: 'Cultivate Foundation',
     avatar: 'SJ',
     bio: 'Curriculum director overseeing biological farming courses, quiz calibrations, and simulator rule coefficients.',
   },

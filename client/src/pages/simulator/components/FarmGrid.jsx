@@ -1,4 +1,5 @@
 import React from 'react';
+import { Sparkles } from 'lucide-react';
 import { FarmTile } from './FarmTile';
 
 export const FarmGrid = ({
@@ -45,7 +46,10 @@ export const FarmGrid = ({
 
       {/* Grid Legend & Footer Tips */}
       <div className="mt-4 pt-3 border-t border-[#E8DEC9] flex flex-wrap items-center justify-between gap-2 text-[11px] text-gray-500">
-        <span>💡 Keyboard Accessible: Tab through plots and press Space or Enter to inspect.</span>
+        <span className="flex items-center gap-1">
+          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+          <span>Keyboard Accessible: Tab through plots and press Space or Enter to inspect.</span>
+        </span>
         <span>Soil moisture dynamically influences microbial respiration and root nutrient absorption.</span>
       </div>
     </div>

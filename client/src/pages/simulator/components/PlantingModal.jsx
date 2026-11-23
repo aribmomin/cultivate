@@ -83,21 +83,13 @@ export const PlantingModal = ({
                 >
                   <div className="flex items-start gap-3.5">
                     <div
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 border"
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border"
                       style={{
                         backgroundColor: `${crop.color}15`,
                         borderColor: `${crop.color}35`
                       }}
                     >
-                      {crop.id === 'crop-tomato'
-                        ? '🍅'
-                        : crop.id === 'crop-wheat'
-                        ? '🌾'
-                        : crop.id === 'crop-corn'
-                        ? '🌽'
-                        : crop.id === 'crop-carrot'
-                        ? '🥕'
-                        : '🍚'}
+                      <Sprout className="w-6 h-6 text-emerald-600" />
                     </div>
 
                     <div>

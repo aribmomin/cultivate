@@ -32,8 +32,8 @@ export const HarvestModal = ({
         >
           {/* Header Graphic */}
           <div className="bg-linear-to-b from-[#0E2A1E] to-[#143D2B] text-white p-6 relative overflow-hidden">
-            <div className="w-16 h-16 rounded-3xl bg-amber-400/20 border border-amber-400/40 text-amber-300 mx-auto flex items-center justify-center text-3xl mb-3 shadow-inner">
-              🌾
+            <div className="w-16 h-16 rounded-3xl bg-amber-400/20 border border-amber-400/40 text-amber-300 mx-auto flex items-center justify-center mb-3 shadow-inner">
+              <Sparkles className="w-8 h-8 text-amber-300" />
             </div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold mb-2 border border-emerald-400/30">
               <Sparkles className="w-3.5 h-3.5" /> Successful Organic Harvest

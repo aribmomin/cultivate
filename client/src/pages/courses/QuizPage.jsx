@@ -188,7 +188,17 @@ export const QuizPage = () => {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
                 <div>
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/20 text-white mb-2">
-                    {scoreData.passed ? '✓ Passing Score Achieved' : '⚠️ Additional Study Needed'}
+                    {scoreData.passed ? (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Passing Score Achieved</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span>Additional Study Needed</span>
+                      </>
+                    )}
                   </div>
                   <h2 className="text-2xl sm:text-3xl font-extrabold font-['Plus_Jakarta_Sans',sans-serif]">
                     Your Score: {scoreData.score}% ({scoreData.correctCount} / {scoreData.totalQuestions} Correct)

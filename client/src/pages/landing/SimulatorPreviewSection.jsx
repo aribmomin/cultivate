@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sprout, DollarSign, Calendar, RefreshCw, Check, Sun, ArrowRight } from 'lucide-react';
+import { Sprout, DollarSign, Calendar, RefreshCw, Check, Sun, ArrowRight, AlertTriangle, Droplets, Bug } from 'lucide-react';
 import { SectionHeading } from '../../components/common/SectionHeading';
 import { Button } from '../../components/common/Button';
 
@@ -171,8 +171,15 @@ export const SimulatorPreviewSection = () => {
                 {/* Dynamic Soil Status Bar */}
                 <div className="w-full text-center text-xs font-medium text-[#78350F] bg-white/90 py-1.5 px-3 rounded-lg z-10 flex items-center justify-between">
                   <span>Soil Moisture: {farm.moisture}%</span>
-                  <span className={farm.moisture < 25 ? 'text-red-600 font-bold' : 'text-emerald-700'}>
-                    {farm.moisture < 25 ? '⚠️ High Dehydration' : 'Moisture Adequate'}
+                  <span className={farm.moisture < 25 ? 'text-red-600 font-bold flex items-center gap-1' : 'text-emerald-700'}>
+                    {farm.moisture < 25 ? (
+                      <>
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        <span>High Dehydration</span>
+                      </>
+                    ) : (
+                      'Moisture Adequate'
+                    )}
                   </span>
                 </div>
               </div>
@@ -246,7 +253,7 @@ export const SimulatorPreviewSection = () => {
                 >
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg bg-[#FEF3C7] text-[#92400E] flex items-center justify-center font-bold text-xs shrink-0">
-                      🌱
+                      <Sprout className="w-4 h-4 text-[#92400E]" />
                     </div>
                     <div>
                       <div className="text-xs font-bold text-[#0E2A1E]">Apply Vermicompost</div>
@@ -263,7 +270,7 @@ export const SimulatorPreviewSection = () => {
                 >
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg bg-[#E0F2FE] text-[#0369A1] flex items-center justify-center font-bold text-xs shrink-0">
-                      💧
+                      <Droplets className="w-4 h-4 text-[#0369A1]" />
                     </div>
                     <div>
                       <div className="text-xs font-bold text-[#0E2A1E]">Drip Irrigation Run</div>
@@ -280,7 +287,7 @@ export const SimulatorPreviewSection = () => {
                 >
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg bg-[#FEF3C7] text-[#B45309] flex items-center justify-center font-bold text-xs shrink-0">
-                      🐞
+                      <Bug className="w-4 h-4 text-[#B45309]" />
                     </div>
                     <div>
                       <div className="text-xs font-bold text-[#0E2A1E]">Cold-Pressed Neem Spray</div>

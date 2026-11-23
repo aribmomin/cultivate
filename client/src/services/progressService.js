@@ -1,6 +1,6 @@
 import { apiClient } from './apiClient';
 
-const STORAGE_KEY = 'terralearn_learning_progress';
+const STORAGE_KEY = 'cultivate_learning_progress_v1';
 
 const getStoredData = () => {
   try {

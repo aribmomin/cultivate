@@ -11,7 +11,9 @@ import {
   ShieldCheck,
   HelpCircle,
   User,
-  GraduationCap
+  GraduationCap,
+  Sprout,
+  Medal
 } from 'lucide-react';
 import { gamificationService } from '../../services/gamificationService';
 import { Badge } from '../../components/common/Badge';
@@ -99,7 +101,7 @@ export const LeaderboardPage = () => {
             {/* User Level & Title */}
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-[#10B981] to-[#059669] flex items-center justify-center text-3xl shadow-sm text-white shrink-0">
-                {userStats?.badgeSymbol || '🌱'}
+                <Sprout className="w-8 h-8 text-white" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -284,8 +286,8 @@ export const LeaderboardPage = () => {
             {/* Rank 2 - Silver (Left) */}
             {top3[1] && (
               <div className="bg-white rounded-3xl border-2 border-slate-300 p-5 shadow-sm order-2 md:order-1 text-center flex flex-col items-center">
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-extrabold text-base mb-2 shadow-inner">
-                  🥈 #2
+                <div className="w-14 h-12 rounded-2xl bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-extrabold text-sm mb-2 shadow-inner">
+                  <Medal className="w-4 h-4 text-slate-500 mr-1" /> #2
                 </div>
                 <h3 className="text-base font-bold text-[#0E2A1E]">
                   {top3[1].displayName}
@@ -303,8 +305,8 @@ export const LeaderboardPage = () => {
                 <div className="absolute -top-3 px-3 py-0.5 rounded-full bg-amber-500 text-white font-extrabold text-[10px] tracking-wider uppercase shadow-xs">
                   Cohort Champion
                 </div>
-                <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-800 border border-amber-300 flex items-center justify-center font-extrabold text-xl mb-2 shadow-inner">
-                  🥇 #1
+                <div className="w-16 h-14 rounded-2xl bg-amber-100 text-amber-800 border border-amber-300 flex items-center justify-center font-extrabold text-base mb-2 shadow-inner">
+                  <Trophy className="w-5 h-5 text-amber-600 mr-1" /> #1
                 </div>
                 <h3 className="text-lg font-extrabold text-[#0E2A1E]">
                   {top3[0].displayName}
@@ -319,8 +321,8 @@ export const LeaderboardPage = () => {
             {/* Rank 3 - Bronze (Right) */}
             {top3[2] && (
               <div className="bg-white rounded-3xl border-2 border-amber-700/30 p-5 shadow-sm order-3 md:order-3 text-center flex flex-col items-center">
-                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-900 border border-amber-300 flex items-center justify-center font-extrabold text-base mb-2 shadow-inner">
-                  🥉 #3
+                <div className="w-14 h-12 rounded-2xl bg-amber-50 text-amber-900 border border-amber-300 flex items-center justify-center font-extrabold text-sm mb-2 shadow-inner">
+                  <Medal className="w-4 h-4 text-amber-700 mr-1" /> #3
                 </div>
                 <h3 className="text-base font-bold text-[#0E2A1E]">
                   {top3[2].displayName}

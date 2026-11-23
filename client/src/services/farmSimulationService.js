@@ -1,182 +1,26 @@
 import { MOCK_CROPS } from '../data/mockCrops';
 import { apiClient } from './apiClient';
 
-const STORAGE_KEY = 'terralearn_farm_simulator_v1';
+const STORAGE_KEY = 'cultivate_farm_simulator_v2';
 
 // Initial 12-tile farm grid (3 rows x 4 columns)
 export const INITIAL_TILES = [
-  {
-    id: 'tile-A1',
-    row: 0,
-    col: 0,
-    label: 'A1',
-    soilHealth: 84,
-    moisture: 60,
-    nitrogenLevel: 80,
-    pestRisk: 18,
-    plantedCrop: {
-      cropId: 'crop-tomato',
-      name: 'Heritage Tomato',
-      daysPlanted: 16,
-      stageIndex: 1, // 'Vegetative'
-      health: 92,
-      companion: {
-        name: 'French Marigold',
-        type: 'marigold',
-        label: 'Pest Barrier'
-      },
-      isWaterStressed: false,
-      isPestAfflicted: false,
-      readyToHarvest: false
-    },
-    previousCrop: null
-  },
-  {
-    id: 'tile-A2',
-    row: 0,
-    col: 1,
-    label: 'A2',
-    soilHealth: 76,
-    moisture: 45,
-    nitrogenLevel: 70,
-    pestRisk: 22,
-    plantedCrop: {
-      cropId: 'crop-wheat',
-      name: 'Organic Durum Wheat',
-      daysPlanted: 10,
-      stageIndex: 1, // 'Stem Elongation'
-      health: 88,
-      companion: null,
-      isWaterStressed: false,
-      isPestAfflicted: false,
-      readyToHarvest: false
-    },
-    previousCrop: null
-  },
-  {
-    id: 'tile-A3',
-    row: 0,
-    col: 2,
-    label: 'A3',
-    soilHealth: 88,
-    moisture: 65,
-    nitrogenLevel: 85,
-    pestRisk: 10,
-    plantedCrop: null, // Ready for learner to plant
-    previousCrop: 'Legume Cover'
-  },
-  {
-    id: 'tile-A4',
-    row: 0,
-    col: 3,
-    label: 'A4',
-    soilHealth: 82,
-    moisture: 58,
-    nitrogenLevel: 78,
-    pestRisk: 12,
-    plantedCrop: null,
-    previousCrop: null
-  },
-  {
-    id: 'tile-B1',
-    row: 1,
-    col: 0,
-    label: 'B1',
-    soilHealth: 79,
-    moisture: 52,
-    nitrogenLevel: 74,
-    pestRisk: 15,
-    plantedCrop: null,
-    previousCrop: null
-  },
-  {
-    id: 'tile-B2',
-    row: 1,
-    col: 1,
-    label: 'B2',
-    soilHealth: 85,
-    moisture: 70,
-    nitrogenLevel: 82,
-    pestRisk: 14,
-    plantedCrop: null,
-    previousCrop: null
-  },
-  {
-    id: 'tile-B3',
-    row: 1,
-    col: 2,
-    label: 'B3',
-    soilHealth: 75,
-    moisture: 40,
-    nitrogenLevel: 68,
-    pestRisk: 20,
-    plantedCrop: null,
-    previousCrop: null
-  },
-  {
-    id: 'tile-B4',
-    row: 1,
-    col: 3,
-    label: 'B4',
-    soilHealth: 90,
-    moisture: 62,
-    nitrogenLevel: 88,
-    pestRisk: 8,
-    plantedCrop: null,
-    previousCrop: null
-  },
-  {
-    id: 'tile-C1',
-    row: 2,
-    col: 0,
-    label: 'C1',
-    soilHealth: 81,
-    moisture: 55,
-    nitrogenLevel: 75,
-    pestRisk: 16,
-    plantedCrop: null,
-    previousCrop: null
-  },
-  {
-    id: 'tile-C2',
-    row: 2,
-    col: 1,
-    label: 'C2',
-    soilHealth: 83,
-    moisture: 58,
-    nitrogenLevel: 79,
-    pestRisk: 12,
-    plantedCrop: null,
-    previousCrop: null
-  },
-  {
-    id: 'tile-C3',
-    row: 2,
-    col: 2,
-    label: 'C3',
-    soilHealth: 86,
-    moisture: 60,
-    nitrogenLevel: 84,
-    pestRisk: 11,
-    plantedCrop: null,
-    previousCrop: null
-  },
-  {
-    id: 'tile-C4',
-    row: 2,
-    col: 3,
-    label: 'C4',
-    soilHealth: 80,
-    moisture: 50,
-    nitrogenLevel: 72,
-    pestRisk: 18,
-    plantedCrop: null,
-    previousCrop: null
-  }
+  { id: 'tile-A1', row: 0, col: 0, label: 'A1', soilHealth: 84, moisture: 60, nitrogenLevel: 80, pestRisk: 18, plantedCrop: null, previousCrop: null },
+  { id: 'tile-A2', row: 0, col: 1, label: 'A2', soilHealth: 76, moisture: 45, nitrogenLevel: 70, pestRisk: 22, plantedCrop: null, previousCrop: null },
+  { id: 'tile-A3', row: 0, col: 2, label: 'A3', soilHealth: 88, moisture: 65, nitrogenLevel: 85, pestRisk: 10, plantedCrop: null, previousCrop: null },
+  { id: 'tile-A4', row: 0, col: 3, label: 'A4', soilHealth: 82, moisture: 58, nitrogenLevel: 78, pestRisk: 12, plantedCrop: null, previousCrop: null },
+  { id: 'tile-B1', row: 1, col: 0, label: 'B1', soilHealth: 79, moisture: 52, nitrogenLevel: 74, pestRisk: 15, plantedCrop: null, previousCrop: null },
+  { id: 'tile-B2', row: 1, col: 1, label: 'B2', soilHealth: 85, moisture: 70, nitrogenLevel: 82, pestRisk: 14, plantedCrop: null, previousCrop: null },
+  { id: 'tile-B3', row: 1, col: 2, label: 'B3', soilHealth: 75, moisture: 40, nitrogenLevel: 68, pestRisk: 20, plantedCrop: null, previousCrop: null },
+  { id: 'tile-B4', row: 1, col: 3, label: 'B4', soilHealth: 90, moisture: 62, nitrogenLevel: 88, pestRisk: 8, plantedCrop: null, previousCrop: null },
+  { id: 'tile-C1', row: 2, col: 0, label: 'C1', soilHealth: 81, moisture: 55, nitrogenLevel: 75, pestRisk: 16, plantedCrop: null, previousCrop: null },
+  { id: 'tile-C2', row: 2, col: 1, label: 'C2', soilHealth: 83, moisture: 58, nitrogenLevel: 79, pestRisk: 12, plantedCrop: null, previousCrop: null },
+  { id: 'tile-C3', row: 2, col: 2, label: 'C3', soilHealth: 86, moisture: 60, nitrogenLevel: 84, pestRisk: 11, plantedCrop: null, previousCrop: null },
+  { id: 'tile-C4', row: 2, col: 3, label: 'C4', soilHealth: 80, moisture: 50, nitrogenLevel: 72, pestRisk: 18, plantedCrop: null, previousCrop: null },
 ];
 
 export const INITIAL_FARM_STATE = {
-  day: 16,
+  day: 1,
   budget: 650.00,
   season: 'Spring (Active Growth)',
   weather: {
@@ -191,15 +35,9 @@ export const INITIAL_FARM_STATE = {
   logs: [
     {
       id: 'log-init-1',
-      day: 16,
+      day: 1,
       type: 'info',
-      message: 'Farm initialized on Day 16. Plots A1 (Tomato) and A2 (Wheat) are actively growing. 10 fertile plots are ready for planting.'
-    },
-    {
-      id: 'log-init-2',
-      day: 16,
-      type: 'bio',
-      message: 'Biological advisory: Plot A1 has French Marigolds planted as companion shields, actively repelling root-knot pests.'
+      message: 'Farm initialized on Day 1. All 12 fertile plots are fallow and ready for organic planting.'
     }
   ]
 };
@@ -770,7 +608,7 @@ export const farmSimulationService = {
       }
 
       if (readyToHarvest && !updatedCrop.readyToHarvest) {
-        warnings.push(`🌾 Plot ${tile.label} (${updatedCrop.name}) reached optimal harvest maturity!`);
+        warnings.push(`Plot ${tile.label} (${updatedCrop.name}) reached optimal harvest maturity!`);
       }
 
       updatedCrop = {

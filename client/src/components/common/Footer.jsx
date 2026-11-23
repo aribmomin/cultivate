@@ -13,7 +13,7 @@ export const Footer = () => {
               <div className="w-8 h-8 rounded-lg bg-[#10B981] flex items-center justify-center text-white">
                 <Sprout className="w-5 h-5" />
               </div>
-              <span>TerraLearn</span>
+              <span>Cultivate</span>
             </Link>
             <p className="text-sm text-gray-300 leading-relaxed max-w-sm mb-6">
               A dedicated academic learning management and 2D virtual simulation platform teaching sustainable, chemical-free agriculture through science-backed practice.
@@ -91,7 +91,7 @@ export const Footer = () => {
         {/* Bottom Disclaimer & Copyright */}
         <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-400">
           <p>
-            © 2026 TerraLearn. Academic Educational & Simulation Project.
+            © 2026 Cultivate. Academic Educational & Simulation Project.
           </p>
           <p className="text-center md:text-right max-w-xl text-gray-400">
             <strong>Educational Disclaimer (SRS 5.2):</strong> All simulation metrics, financial returns, and crop yields are instructional estimates for practice and do not replace professional on-site agricultural agronomy.

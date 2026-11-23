@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sprout, AlertTriangle, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Sprout, AlertTriangle, Sparkles, CheckCircle2, Droplets, Bug, Leaf, Flower2 } from 'lucide-react';
 import { MOCK_CROPS } from '../../../data/mockCrops';
 
 export const FarmTile = ({
@@ -51,10 +51,14 @@ export const FarmTile = ({
         {/* Companion Plant Icon (if any) */}
         {tile.plantedCrop.companion && (
           <div
-            className="absolute top-0 right-1 text-xs"
+            className="absolute top-0 right-1"
             title={`Companion: ${tile.plantedCrop.companion.name}`}
           >
-            {tile.plantedCrop.companion.type === 'marigold' ? '🌼' : '🍀'}
+            {tile.plantedCrop.companion.type === 'marigold' ? (
+              <Flower2 className="w-3.5 h-3.5 text-amber-500" />
+            ) : (
+              <Leaf className="w-3.5 h-3.5 text-emerald-500" />
+            )}
           </div>
         )}
 
@@ -74,29 +78,9 @@ export const FarmTile = ({
           >
             {stageIndex === 0 && <Sprout className="w-6 h-6 text-emerald-600" />}
             {stageIndex === 1 && <Sprout className="w-8 h-8 text-emerald-700" />}
-            {stageIndex === 2 && (
-              <span className="text-2xl" role="img" aria-label="flowering stage">
-                {cropDef.id === 'crop-tomato' ? '🌸' : cropDef.id === 'crop-corn' ? '🌽' : '🌿'}
-              </span>
-            )}
-            {stageIndex === 3 && (
-              <span className="text-2xl" role="img" aria-label="fruiting stage">
-                {cropDef.id === 'crop-tomato' ? '🍅' : cropDef.id === 'crop-carrot' ? '🥕' : '🌾'}
-              </span>
-            )}
-            {stageIndex >= 4 && (
-              <span className="text-3xl filter drop-shadow-xs" role="img" aria-label="harvest ready">
-                {cropDef.id === 'crop-tomato'
-                  ? '🍅'
-                  : cropDef.id === 'crop-wheat'
-                  ? '🌾'
-                  : cropDef.id === 'crop-corn'
-                  ? '🌽'
-                  : cropDef.id === 'crop-carrot'
-                  ? '🥕'
-                  : '🍚'}
-              </span>
-            )}
+            {stageIndex === 2 && <Leaf className="w-8 h-8 text-emerald-600" />}
+            {stageIndex === 3 && <Sprout className="w-9 h-9 text-emerald-700" />}
+            {stageIndex >= 4 && <Sparkles className="w-9 h-9 text-amber-500" />}
           </div>
         </motion.div>
 
@@ -163,13 +147,13 @@ export const FarmTile = ({
 
         {/* Moisture Tag */}
         <span
-          className={`px-1.5 py-0.5 rounded-md text-[10px] font-semibold flex items-center gap-0.5 ${
+          className={`px-1.5 py-0.5 rounded-md text-[10px] font-semibold flex items-center gap-1 ${
             tile.moisture < 20
               ? 'bg-red-100 text-red-700 animate-pulse'
               : 'bg-blue-50/90 text-blue-800'
           }`}
         >
-          💧 {tile.moisture}%
+          <Droplets className="w-3 h-3 text-blue-600" /> {tile.moisture}%
         </span>
       </div>
 
@@ -181,8 +165,8 @@ export const FarmTile = ({
       {/* Bottom Alert Flags */}
       <div className="mt-1.5 flex items-center justify-between text-[10px] px-1">
         {/* Soil Health Metric */}
-        <span className="text-gray-600 font-medium">
-          🌱 Soil {tile.soilHealth}%
+        <span className="text-gray-600 font-medium flex items-center gap-1">
+          <Leaf className="w-3 h-3 text-emerald-600" /> Soil {tile.soilHealth}%
         </span>
 
         {/* Pest or Dehydration Warning */}
@@ -191,8 +175,8 @@ export const FarmTile = ({
             <AlertTriangle className="w-3 h-3 text-red-500" /> Thirsty
           </span>
         ) : tile.plantedCrop && tile.plantedCrop.isPestAfflicted ? (
-          <span className="text-amber-700 font-bold flex items-center gap-0.5">
-            🐞 Pests
+          <span className="text-amber-700 font-bold flex items-center gap-1">
+            <Bug className="w-3 h-3 text-amber-600" /> Pests
           </span>
         ) : tile.plantedCrop && tile.plantedCrop.readyToHarvest ? (
           <span className="text-amber-800 font-bold flex items-center gap-0.5">

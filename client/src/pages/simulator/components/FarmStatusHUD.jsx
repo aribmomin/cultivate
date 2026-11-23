@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, DollarSign, CloudSun, Sprout, HeartPulse, RefreshCw, ArrowRight } from 'lucide-react';
+import { Calendar, DollarSign, CloudSun, Sprout, HeartPulse, RefreshCw, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '../../../components/common/Button';
 
 export const FarmStatusHUD = ({
@@ -33,7 +33,7 @@ export const FarmStatusHUD = ({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg sm:text-xl font-extrabold text-white font-['Plus_Jakarta_Sans',sans-serif]">
-                TerraLearn Organic Farm Studio
+                Cultivate Organic Farm Studio
               </h1>
               <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#143D2B] text-emerald-300 border border-[#1F4A37]">
                 Live 2D Engine
@@ -78,8 +78,8 @@ export const FarmStatusHUD = ({
             <span className="text-sm font-bold text-gray-200 mt-0.5">
               {plantedCount} / 12 Plots
               {readyToHarvestCount > 0 && (
-                <span className="ml-1 text-[11px] text-amber-400 font-extrabold animate-pulse">
-                  ({readyToHarvestCount} 🌾)
+                <span className="ml-1 text-[11px] text-amber-400 font-extrabold animate-pulse inline-flex items-center gap-0.5">
+                  ({readyToHarvestCount} Ready <Sparkles className="w-2.5 h-2.5" />)
                 </span>
               )}
             </span>

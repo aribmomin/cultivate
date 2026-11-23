@@ -86,13 +86,13 @@ export const Navbar = () => {
             to="/"
             onClick={() => setMobileMenuOpen(false)}
             className="flex items-center gap-2.5 text-[#0E2A1E] font-['Plus_Jakarta_Sans',sans-serif] font-extrabold text-xl tracking-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-[#10B981] rounded-lg p-1"
-            aria-label="TerraLearn Home"
+            aria-label="Cultivate Home"
           >
             <div className="w-9 h-9 rounded-xl bg-linear-to-br from-[#10B981] to-[#059669] flex items-center justify-center text-white shadow-xs">
               <Sprout className="w-5 h-5" aria-hidden="true" />
             </div>
             <div className="flex flex-col">
-              <span className="leading-none text-lg text-[#0E2A1E]">TerraLearn</span>
+              <span className="leading-none text-lg text-[#0E2A1E]">Cultivate</span>
               <span className="text-[10px] font-semibold uppercase tracking-wider text-[#10B981]">Organic Academy</span>
             </div>
           </Link>

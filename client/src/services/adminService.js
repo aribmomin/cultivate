@@ -2,7 +2,7 @@ import { MOCK_COURSES } from '../data/mockCourses';
 import { MOCK_CROPS } from '../data/mockCrops';
 import { apiClient } from './apiClient';
 
-const ADMIN_STORAGE_KEY = 'terralearn_admin_config_v1';
+const ADMIN_STORAGE_KEY = 'cultivate_admin_config_v1';
 
 export const DEFAULT_SIMULATION_COEFFICIENTS = {
   initialBudget: 650,

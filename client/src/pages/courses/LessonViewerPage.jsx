@@ -192,7 +192,7 @@ export const LessonViewerPage = () => {
                   }`}
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>{isCompleted ? 'Completed ✓' : 'Mark Lesson as Complete'}</span>
+                  <span>{isCompleted ? 'Completed' : 'Mark Lesson as Complete'}</span>
                 </button>
 
                 {/* Next Action Link */}
@@ -277,7 +277,7 @@ export const LessonViewerPage = () => {
                               : 'bg-gray-200 text-gray-700'
                           }`}
                         >
-                          {isDone ? '✓' : idx + 1}
+                          {isDone ? <Check className="w-3.5 h-3.5 inline" /> : idx + 1}
                         </span>
                         <span className="truncate">{lesson.title}</span>
                       </div>

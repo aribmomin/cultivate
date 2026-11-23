@@ -45,7 +45,7 @@ export const CorePillarsSection = () => {
         <SectionHeading
           eyebrow="Pedagogical Philosophy"
           title="Bridging Agricultural Science & Virtual Practice"
-          description="TerraLearn is designed from the ground up to make complex ecological relationships intuitive, memorable, and measurable for modern learners."
+          description="Cultivate is designed from the ground up to make complex ecological relationships intuitive, memorable, and measurable for modern learners."
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

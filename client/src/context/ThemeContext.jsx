@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ThemeContext } from './themeContextInstance';
 
-const THEME_STORAGE_KEY = 'terralearn_theme_mode';
+const THEME_STORAGE_KEY = 'cultivate_theme_mode';
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {

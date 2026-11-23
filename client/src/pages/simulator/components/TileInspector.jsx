@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sprout, Droplets, HeartPulse, Bug, Sparkles, RefreshCw } from 'lucide-react';
+import { Sprout, Droplets, HeartPulse, Bug, Sparkles, RefreshCw, AlertTriangle, Leaf, Flower2 } from 'lucide-react';
 import { MOCK_CROPS } from '../../../data/mockCrops';
 import { ACTION_COSTS } from '../../../services/farmSimulationService';
 import { Button } from '../../../components/common/Button';
@@ -140,8 +140,17 @@ export const TileInspector = ({
               style={{ width: `${tile.moisture}%` }}
             />
           </div>
-          <span className="text-[10px] text-gray-500 mt-1 block">
-            {tile.moisture < 20 ? '⚠️ High Dehydration' : tile.moisture > 85 ? 'Saturated' : 'Optimal'}
+          <span className="text-[10px] text-gray-500 mt-1 flex items-center gap-1">
+            {tile.moisture < 20 ? (
+              <>
+                <AlertTriangle className="w-3 h-3 text-red-500" />
+                <span className="text-red-600 font-semibold">High Dehydration</span>
+              </>
+            ) : tile.moisture > 85 ? (
+              'Saturated'
+            ) : (
+              'Optimal'
+            )}
           </span>
         </div>
 
@@ -165,7 +174,7 @@ export const TileInspector = ({
         <div className="bg-[#FEFCE8] border border-[#FEF08A] p-3 rounded-2xl">
           <div className="flex items-center justify-between text-xs mb-1">
             <span className="font-semibold text-gray-700 flex items-center gap-1">
-              🌱 Nitrogen (N)
+              <Leaf className="w-3.5 h-3.5 text-amber-600" /> Nitrogen (N)
             </span>
             <span className="font-extrabold text-[#854D0E]">{tile.nitrogenLevel}%</span>
           </div>
@@ -193,8 +202,15 @@ export const TileInspector = ({
               style={{ width: `${tile.pestRisk}%` }}
             />
           </div>
-          <span className="text-[10px] text-gray-500 mt-1 block">
-            {tile.pestRisk > 50 ? '⚠️ High Aphid Threat' : 'Protected Buffer'}
+          <span className="text-[10px] text-gray-500 mt-1 flex items-center gap-1">
+            {tile.pestRisk > 50 ? (
+              <>
+                <AlertTriangle className="w-3 h-3 text-red-500" />
+                <span className="text-red-600 font-semibold">High Aphid Threat</span>
+              </>
+            ) : (
+              'Protected Buffer'
+            )}
           </span>
         </div>
       </div>
@@ -233,7 +249,10 @@ export const TileInspector = ({
             icon={Sparkles}
             className="w-full bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold shadow-md justify-between"
           >
-            <span>🌾 Harvest Crop Now</span>
+            <span className="flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-amber-200" />
+              <span>Harvest Crop Now</span>
+            </span>
             <span className="text-xs bg-amber-800/40 px-2 py-0.5 rounded-md">Collect Cash</span>
           </Button>
         )}
@@ -250,7 +269,9 @@ export const TileInspector = ({
           }`}
         >
           <div className="flex items-center gap-2">
-            <span className="text-base">💧</span>
+            <div className="w-6 h-6 rounded-lg bg-[#E0F2FE] flex items-center justify-center">
+              <Droplets className="w-3.5 h-3.5 text-[#0369A1]" />
+            </div>
             <div>
               <div className="font-bold text-[#0E2A1E]">Drip Irrigation Run</div>
               <div className="text-[10px] text-gray-500">
@@ -275,7 +296,9 @@ export const TileInspector = ({
           }`}
         >
           <div className="flex items-center gap-2">
-            <span className="text-base">🌱</span>
+            <div className="w-6 h-6 rounded-lg bg-[#ECFDF5] flex items-center justify-center">
+              <Sprout className="w-3.5 h-3.5 text-[#065F46]" />
+            </div>
             <div>
               <div className="font-bold text-[#0E2A1E]">Apply Vermicompost</div>
               <div className="text-[10px] text-gray-500">+16% Vitality • +22% N Microbes</div>
@@ -300,7 +323,9 @@ export const TileInspector = ({
               }`}
             >
               <div className="flex items-center gap-2">
-                <span className="text-base">🐞</span>
+                <div className="w-6 h-6 rounded-lg bg-[#FEF3C7] flex items-center justify-center">
+                  <Bug className="w-3.5 h-3.5 text-[#B45309]" />
+                </div>
                 <div>
                   <div className="font-bold text-[#0E2A1E]">Cold-Pressed Neem Spray</div>
                   <div className="text-[10px] text-gray-500">-30% Aphid & Mite Hazard</div>
@@ -335,7 +360,9 @@ export const TileInspector = ({
                       disabled={budget < ACTION_COSTS.companionMarigold}
                       className="p-2 rounded-lg bg-white border border-amber-200 hover:border-amber-400 text-left cursor-pointer text-[10px]"
                     >
-                      <div className="font-bold text-amber-900">🌼 French Marigold</div>
+                      <div className="font-bold text-amber-900 flex items-center gap-1">
+                        <Flower2 className="w-3 h-3 text-amber-600" /> French Marigold
+                      </div>
                       <div className="text-gray-500">Pest Shield (-$15)</div>
                     </button>
 
@@ -345,7 +372,9 @@ export const TileInspector = ({
                       disabled={budget < ACTION_COSTS.companionClover}
                       className="p-2 rounded-lg bg-white border border-emerald-200 hover:border-emerald-400 text-left cursor-pointer text-[10px]"
                     >
-                      <div className="font-bold text-emerald-900">🍀 White Clover</div>
+                      <div className="font-bold text-emerald-900 flex items-center gap-1">
+                        <Leaf className="w-3 h-3 text-emerald-600" /> White Clover
+                      </div>
                       <div className="text-gray-500">Fix Nitrogen (-$15)</div>
                     </button>
                   </div>

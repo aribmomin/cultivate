@@ -11,7 +11,8 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  Sprout
+  Sprout,
+  Zap
 } from 'lucide-react';
 import { useAuth } from '../../context/useAuth';
 import { DEMO_PERSONAS } from '../../services/authService';
@@ -87,7 +88,7 @@ export const AuthPage = ({ initialMode = 'login' }) => {
       return;
     }
 
-    setSuccessMsg(`Account created successfully! Welcome to TerraLearn, ${res.user.name}.`);
+    setSuccessMsg(`Account created successfully! Welcome to Cultivate, ${res.user.name}.`);
     setTimeout(() => {
       navigate('/courses');
     }, 1200);
@@ -151,8 +152,9 @@ export const AuthPage = ({ initialMode = 'login' }) => {
 
           <div className="flex flex-col gap-2.5">
             <Link to="/courses">
-              <Button variant="primary" size="md" className="w-full font-bold">
-                Continue to Course Catalog ➔
+              <Button variant="primary" size="md" className="w-full font-bold flex items-center justify-center gap-1.5">
+                <span>Continue to Course Catalog</span>
+                <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             </Link>
             <Link to="/simulator">
@@ -184,7 +186,7 @@ export const AuthPage = ({ initialMode = 'login' }) => {
             <Sprout className="w-7 h-7" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0E2A1E] dark:text-[#E8F5EE] font-['Plus_Jakarta_Sans',sans-serif]">
-            {mode === 'login' ? 'Sign In to TerraLearn' : 'Create Learner Account'}
+            {mode === 'login' ? 'Sign In to Cultivate' : 'Create Learner Account'}
           </h1>
           <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
             {mode === 'login'
@@ -449,8 +451,9 @@ export const AuthPage = ({ initialMode = 'login' }) => {
 
           {/* Quick Academic Demo Personas (SRS AUTH-REQ-01 & 06) */}
           <div className="mt-6 pt-5 border-t border-gray-100 dark:border-gray-800">
-            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-2 text-center">
-              ⚡ 1-Click Academic Demo Login
+            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-2 text-center flex items-center justify-center gap-1">
+              <Zap className="w-3.5 h-3.5 text-amber-500" />
+              <span>1-Click Academic Demo Login</span>
             </span>
 
             <div className="flex flex-col gap-1.5">
@@ -484,8 +487,9 @@ export const AuthPage = ({ initialMode = 'login' }) => {
         </div>
 
         {/* Security & Disclaimer Note */}
-        <p className="text-[11px] text-center text-gray-500 max-w-xs mx-auto">
-          🔒 Phase 1 Client Authentication. Sessions persist in local storage. Production passwords will be hashed with bcrypt in Phase 2 per SRS AUTH-REQ-02.
+        <p className="text-[11px] text-center text-gray-500 max-w-xs mx-auto flex items-center justify-center gap-1">
+          <Lock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+          <span>Secure authentication with bcrypt hashing & JWT tokens per SRS AUTH-REQ-02.</span>
         </p>
 
       </div>
