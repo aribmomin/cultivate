@@ -205,9 +205,10 @@ export const Navbar = () => {
                       <div className="border-t border-gray-100 dark:border-gray-800 mt-1 pt-1">
                         <button
                           type="button"
-                          onClick={() => {
-                            logout();
+                          onClick={async () => {
+                            await logout();
                             setUserDropdownOpen(false);
+                            navigate('/');
                           }}
                           className="w-full flex items-center gap-2 p-2 rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer"
                         >
@@ -287,7 +288,11 @@ export const Navbar = () => {
                   </div>
                   <button
                     type="button"
-                    onClick={logout}
+                    onClick={async () => {
+                      await logout();
+                      setMobileMenuOpen(false);
+                      navigate('/');
+                    }}
                     className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg text-xs"
                     title="Sign Out"
                   >

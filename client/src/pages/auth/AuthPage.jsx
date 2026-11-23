@@ -11,16 +11,14 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  Sprout,
-  Zap
+  Sprout
 } from 'lucide-react';
 import { useAuth } from '../../context/useAuth';
-import { DEMO_PERSONAS } from '../../services/authService';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 
 export const AuthPage = ({ initialMode = 'login' }) => {
-  const { user, isAuthenticated, login, loginAsPersona, register, logout } = useAuth();
+  const { user, isAuthenticated, login, register, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -94,18 +92,6 @@ export const AuthPage = ({ initialMode = 'login' }) => {
     }, 1200);
   };
 
-  // Handle 1-Click Persona Login
-  const handlePersonaLogin = async (personaId) => {
-    setError(null);
-    const res = await loginAsPersona(personaId);
-    if (res.success) {
-      setSuccessMsg(`Signed in as ${res.user.name} (${res.user.roleLabel})`);
-      setTimeout(() => {
-        navigate(res.user.role === 'admin' ? '/admin' : '/courses');
-      }, 800);
-    }
-  };
-
   // If user is already authenticated, show active session profile card
   if (isAuthenticated && user) {
     return (
@@ -165,7 +151,10 @@ export const AuthPage = ({ initialMode = 'login' }) => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={logout}
+              onClick={async () => {
+                await logout();
+                navigate('/');
+              }}
               className="mt-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
             >
               Sign Out of Session
@@ -449,41 +438,7 @@ export const AuthPage = ({ initialMode = 'login' }) => {
             </form>
           )}
 
-          {/* Quick Academic Demo Personas (SRS AUTH-REQ-01 & 06) */}
-          <div className="mt-6 pt-5 border-t border-gray-100 dark:border-gray-800">
-            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-2 text-center flex items-center justify-center gap-1">
-              <Zap className="w-3.5 h-3.5 text-amber-500" />
-              <span>1-Click Academic Demo Login</span>
-            </span>
 
-            <div className="flex flex-col gap-1.5">
-              {DEMO_PERSONAS.map((persona) => (
-                <button
-                  key={persona.id}
-                  type="button"
-                  onClick={() => handlePersonaLogin(persona.id)}
-                  className="w-full flex items-center justify-between p-2 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-[#10B981] hover:bg-[#F0FDF4] dark:hover:bg-[#1B4D36]/40 transition-colors text-left cursor-pointer text-xs"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-lg bg-emerald-100 text-[#065F46] font-bold text-[10px] flex items-center justify-center">
-                      {persona.avatar}
-                    </div>
-                    <div>
-                      <span className="font-bold text-[#0E2A1E] dark:text-white">
-                        {persona.name}
-                      </span>
-                      <span className="text-[10px] text-gray-400 block">
-                        {persona.institution}
-                      </span>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
-                    {persona.roleLabel}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Security & Disclaimer Note */}

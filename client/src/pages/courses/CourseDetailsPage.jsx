@@ -1,22 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Clock, CheckCircle2, Award, ArrowRight, Play, RefreshCw } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { MOCK_COURSES } from '../../data/mockCourses';
 import { progressService } from '../../services/progressService';
+import { useAuth } from '../../context/useAuth';
 
 export const CourseDetailsPage = () => {
   const { id } = useParams();
+  const { user, isAuthenticated } = useAuth();
 
   // Match by id or slug
   const course = MOCK_COURSES.find((c) => c.id === id || c.slug === id);
 
   const [completedLessonIds, setCompletedLessonIds] = useState(() =>
-    course ? progressService.getCompletedLessons(course.id) : []
+    course && user?._id ? progressService.getCompletedLessons(course.id, user._id) : []
   );
   const [quizRecord, setQuizRecord] = useState(() =>
-    course ? progressService.getQuizResult(course.id) : null
+    course && user?._id ? progressService.getQuizResult(course.id, user._id) : null
   );
+
+  useEffect(() => {
+    let isMounted = true;
+    if (course && user?._id) {
+      progressService.syncProgress(user._id).then(() => {
+        if (isMounted) {
+          setCompletedLessonIds(progressService.getCompletedLessons(course.id, user._id));
+          setQuizRecord(progressService.getQuizResult(course.id, user._id));
+        }
+      });
+    } else {
+      setCompletedLessonIds([]);
+      setQuizRecord(null);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [course?.id, user?._id]);
 
   // Invalid Course ID handling
   if (!course) {
@@ -43,14 +63,16 @@ export const CourseDetailsPage = () => {
   }
 
   const totalLessons = course.lessons.length;
-  const progressPct = progressService.getCourseProgressPercentage(course.id, totalLessons);
+  const progressPct = (isAuthenticated && user?._id)
+    ? progressService.getCourseProgressPercentage(course.id, totalLessons, user._id)
+    : 0;
 
   // Find next uncompleted lesson to recommend
   const nextLesson = course.lessons.find((l) => !completedLessonIds.includes(l.id)) || course.lessons[0];
 
-  const handleResetProgress = () => {
+  const handleResetProgress = async () => {
     if (window.confirm('Are you sure you want to reset your progress for this course?')) {
-      progressService.resetCourseProgress(course.id);
+      await progressService.resetCourseProgress(course.id, user?._id);
       setCompletedLessonIds([]);
       setQuizRecord(null);
     }

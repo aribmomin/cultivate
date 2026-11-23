@@ -18,12 +18,10 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     try {
-      // Check for standalone token or session user token
       const token =
         localStorage.getItem('cultivate_auth_token_v1') ||
-        localStorage.getItem('terralearn_auth_token_v1') ||
         (() => {
-          const userRaw = localStorage.getItem('cultivate_auth_user_v1') || localStorage.getItem('terralearn_auth_user_v1');
+          const userRaw = localStorage.getItem('cultivate_auth_user_v1');
           if (userRaw) {
             const user = JSON.parse(userRaw);
             return user.token;
@@ -42,7 +40,7 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor: Extract consistent error messages
+// Response interceptor: Extract consistent error messages + handle 401
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -50,10 +48,25 @@ apiClient.interceptors.response.use(
       error.response?.data?.message ||
       error.message ||
       'An unexpected network error occurred.';
+
+    // On 401 (token expired / invalid), force logout via custom event
+    // Skip for auth endpoints themselves to avoid logout loops
+    if (
+      error.response?.status === 401 &&
+      !error.config?.url?.includes('/auth/login') &&
+      !error.config?.url?.includes('/auth/register') &&
+      !error.config?.url?.includes('/auth/persona-login')
+    ) {
+      try {
+        window.dispatchEvent(new CustomEvent('cultivate:force-logout'));
+      } catch {
+        // ignore
+      }
+    }
+
     return Promise.reject({
       ...error,
       extractedMessage: message,
     });
   }
 );
-

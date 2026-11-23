@@ -5,66 +5,9 @@ import { SimulationConfig } from '../models/SimulationConfig.js';
 import { awardUserXp } from './gamificationService.js';
 
 export const INITIAL_TILES = [
-  {
-    id: 'tile-A1',
-    row: 0,
-    col: 0,
-    label: 'A1',
-    soilHealth: 84,
-    moisture: 60,
-    nitrogenLevel: 80,
-    pestRisk: 18,
-    plantedCrop: {
-      cropId: 'crop-tomato',
-      name: 'Heritage Tomato',
-      daysPlanted: 16,
-      stageIndex: 1,
-      health: 92,
-      companion: {
-        name: 'French Marigold',
-        type: 'marigold',
-        label: 'Pest Barrier',
-      },
-      isWaterStressed: false,
-      isPestAfflicted: false,
-      readyToHarvest: false,
-    },
-    previousCrop: null,
-  },
-  {
-    id: 'tile-A2',
-    row: 0,
-    col: 1,
-    label: 'A2',
-    soilHealth: 76,
-    moisture: 45,
-    nitrogenLevel: 70,
-    pestRisk: 22,
-    plantedCrop: {
-      cropId: 'crop-wheat',
-      name: 'Organic Durum Wheat',
-      daysPlanted: 10,
-      stageIndex: 1,
-      health: 88,
-      companion: null,
-      isWaterStressed: false,
-      isPestAfflicted: false,
-      readyToHarvest: false,
-    },
-    previousCrop: null,
-  },
-  {
-    id: 'tile-A3',
-    row: 0,
-    col: 2,
-    label: 'A3',
-    soilHealth: 88,
-    moisture: 65,
-    nitrogenLevel: 85,
-    pestRisk: 10,
-    plantedCrop: null,
-    previousCrop: 'Legume Cover',
-  },
+  { id: 'tile-A1', row: 0, col: 0, label: 'A1', soilHealth: 84, moisture: 60, nitrogenLevel: 80, pestRisk: 18, plantedCrop: null, previousCrop: null },
+  { id: 'tile-A2', row: 0, col: 1, label: 'A2', soilHealth: 76, moisture: 45, nitrogenLevel: 70, pestRisk: 22, plantedCrop: null, previousCrop: null },
+  { id: 'tile-A3', row: 0, col: 2, label: 'A3', soilHealth: 88, moisture: 65, nitrogenLevel: 85, pestRisk: 10, plantedCrop: null, previousCrop: null },
   { id: 'tile-A4', row: 0, col: 3, label: 'A4', soilHealth: 82, moisture: 58, nitrogenLevel: 78, pestRisk: 12, plantedCrop: null, previousCrop: null },
   { id: 'tile-B1', row: 1, col: 0, label: 'B1', soilHealth: 79, moisture: 52, nitrogenLevel: 74, pestRisk: 15, plantedCrop: null, previousCrop: null },
   { id: 'tile-B2', row: 1, col: 1, label: 'B2', soilHealth: 85, moisture: 70, nitrogenLevel: 82, pestRisk: 14, plantedCrop: null, previousCrop: null },
@@ -77,7 +20,7 @@ export const INITIAL_TILES = [
 ];
 
 export const INITIAL_FARM_DATA = {
-  day: 16,
+  day: 1,
   budget: 650.0,
   season: 'Spring (Active Growth)',
   weather: {
@@ -92,17 +35,10 @@ export const INITIAL_FARM_DATA = {
   logs: [
     {
       id: 'log-init-1',
-      day: 16,
+      day: 1,
       type: 'info',
       message:
-        'Farm initialized on Day 16. Plots A1 (Tomato) and A2 (Wheat) are actively growing. 10 fertile plots are ready for planting.',
-    },
-    {
-      id: 'log-init-2',
-      day: 16,
-      type: 'bio',
-      message:
-        'Biological advisory: Plot A1 has French Marigolds planted as companion shields, actively repelling root-knot pests.',
+        'Farm initialized on Day 1. All 12 fertile plots are fallow and ready for organic planting.',
     },
   ],
 };
@@ -142,20 +78,24 @@ export const simulationEngine = {
   async getUserFarm(userId) {
     let farm = await Farm.findOne({ userId });
     if (!farm) {
+      const coeffs = await this.getCoefficients();
       farm = await Farm.create({
         userId,
         ...INITIAL_FARM_DATA,
+        budget: coeffs.initialBudget !== undefined ? coeffs.initialBudget : 650.0,
       });
     }
     return farm;
   },
 
-  // Reset user farm to Day 16 baseline
+  // Reset user farm to Day 1 baseline using dynamic SimulationConfig initialBudget
   async resetFarm(userId) {
     await Farm.deleteOne({ userId });
+    const coeffs = await this.getCoefficients();
     const freshFarm = await Farm.create({
       userId,
       ...INITIAL_FARM_DATA,
+      budget: coeffs.initialBudget !== undefined ? coeffs.initialBudget : 650.0,
     });
     return freshFarm;
   },
@@ -342,7 +282,8 @@ export const simulationEngine = {
         };
       }
 
-      case 'companion': {
+      case 'companion':
+      case 'addCompanion': {
         if (!tile.plantedCrop) {
           return {
             success: false,
@@ -529,9 +470,9 @@ export const simulationEngine = {
       { condition: 'Gentle Rain', temperatureC: 19, rainfallMm: 12, label: 'Gentle Rain • 19°C • Free Natural Hydration' },
       { condition: 'Warm & Humid', temperatureC: 27, rainfallMm: 0, label: 'Warm & Humid • 27°C • Moderate Pest Drift' },
     ];
-    const weatherIndex = (newDay + 1) % weatherPatterns.length;
-    const isExplicitRain = farm.weather?.condition === 'Rainy' || (farm.weather?.rainfallMm && farm.weather.rainfallMm > 0);
-    const currentWeather = isExplicitRain ? farm.weather : weatherPatterns[weatherIndex];
+    const weatherIndex = (newDay - 1) % weatherPatterns.length;
+    const isExplicitWeather = farm.weather && farm.weather.condition && ['Sunny', 'Heatwave', 'Rainy', 'Gentle Rain'].includes(farm.weather.condition);
+    const currentWeather = isExplicitWeather ? farm.weather : weatherPatterns[weatherIndex];
     const isRainy = currentWeather.rainfallMm > 0;
 
     const warnings = [];
@@ -617,7 +558,7 @@ export const simulationEngine = {
       }
 
       if (isReadyToHarvest && tile.plantedCrop.daysPlanted === minHarvest) {
-        warnings.push(`🌾 Plot ${tile.label} (${tile.plantedCrop.name}) reached harvest maturity!`);
+        warnings.push(`Plot ${tile.label} (${tile.plantedCrop.name}) reached harvest maturity!`);
       }
 
       tile.plantedCrop.health = Math.round(health);

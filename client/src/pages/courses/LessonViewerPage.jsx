@@ -1,17 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, CheckCircle2, Award, Check, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Award, Check, Sparkles, ChevronLeft, ChevronRight, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { MOCK_COURSES } from '../../data/mockCourses';
 import { progressService } from '../../services/progressService';
+import { useAuth } from '../../context/useAuth';
 
 export const LessonViewerPage = () => {
   const { id: courseId, lessonId } = useParams();
+  const { user } = useAuth();
 
   const course = MOCK_COURSES.find((c) => c.id === courseId || c.slug === courseId);
   const [completedIds, setCompletedIds] = useState(() =>
-    course ? progressService.getCompletedLessons(course.id) : []
+    course ? progressService.getCompletedLessons(course.id, user?._id) : []
   );
+  const [isToggling, setIsToggling] = useState(false);
+  const [toggleError, setToggleError] = useState(null);
+
+  // Sync latest authoritative progress on mount or user change
+  useEffect(() => {
+    let isMounted = true;
+    if (course && user?._id) {
+      progressService.syncProgress(user._id).then(() => {
+        if (isMounted) {
+          setCompletedIds(progressService.getCompletedLessons(course.id, user._id));
+        }
+      });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [course?.id, user?._id]);
 
   // Invalid Course Handling
   if (!course) {
@@ -54,11 +73,26 @@ export const LessonViewerPage = () => {
   const nextLesson = hasNext ? course.lessons[currentLessonIndex + 1] : null;
 
   const totalLessons = course.lessons.length;
-  const progressPct = progressService.getCourseProgressPercentage(course.id, totalLessons);
+  const progressPct = progressService.getCourseProgressPercentage(course.id, totalLessons, user?._id);
 
-  const toggleComplete = () => {
-    progressService.toggleLessonCompletion(course.id, currentLesson.id);
-    setCompletedIds(progressService.getCompletedLessons(course.id));
+  // Authoritative Async Lesson Completion Toggle
+  const toggleComplete = async () => {
+    if (isToggling) return;
+    setIsToggling(true);
+    setToggleError(null);
+
+    try {
+      const res = await progressService.toggleLessonCompletion(course.id, currentLesson.id, user?._id);
+      if (res.success) {
+        setCompletedIds(progressService.getCompletedLessons(course.id, user?._id));
+      } else {
+        setToggleError(res.reason || 'Failed to update progress on server.');
+      }
+    } catch {
+      setToggleError('Network error updating lesson completion.');
+    } finally {
+      setIsToggling(false);
+    }
   };
 
   return (
@@ -102,20 +136,12 @@ export const LessonViewerPage = () => {
                   Unit {currentLessonIndex + 1} • {currentLesson.duration}
                 </span>
 
-                {/* Mark as Complete Toggle Button */}
-                <button
-                  type="button"
-                  onClick={toggleComplete}
-                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-                    isCompleted
-                      ? 'bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]'
-                      : 'bg-[#FBFBF9] hover:bg-[#F0FDF4] text-gray-700 border-[#D5DDD5]'
-                  }`}
-                  aria-pressed={isCompleted}
-                >
-                  <CheckCircle2 className={`w-4 h-4 ${isCompleted ? 'text-[#10B981]' : 'text-gray-400'}`} />
-                  <span>{isCompleted ? 'Marked Complete' : 'Mark as Complete'}</span>
-                </button>
+                {isCompleted && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" />
+                    <span>Completed</span>
+                  </span>
+                )}
               </div>
 
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#0E2A1E] font-['Plus_Jakarta_Sans',sans-serif] tracking-tight mb-4">
@@ -180,19 +206,40 @@ export const LessonViewerPage = () => {
                 })}
               </div>
 
-              {/* Bottom Complete & Navigation Bar */}
+              {/* Error feedback if toggle failed */}
+              {toggleError && (
+                <div className="mt-6 p-3 rounded-xl bg-red-50 text-red-700 text-xs border border-red-200 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{toggleError}</span>
+                </div>
+              )}
+
+              {/* Single Primary Completion & Navigation Bar */}
               <div className="mt-10 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <button
                   type="button"
                   onClick={toggleComplete}
+                  disabled={isToggling}
                   className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer border ${
-                    isCompleted
+                    isToggling
+                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                      : isCompleted
                       ? 'bg-[#10B981] text-white border-[#10B981] shadow-xs'
                       : 'bg-white hover:bg-[#F0FDF4] text-[#143D2B] border-[#143D2B]/30'
                   }`}
                 >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>{isCompleted ? 'Completed' : 'Mark Lesson as Complete'}</span>
+                  {isToggling ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className={`w-4 h-4 ${isCompleted ? 'text-white' : 'text-[#10B981]'}`} />
+                  )}
+                  <span>
+                    {isToggling
+                      ? 'Updating...'
+                      : isCompleted
+                      ? 'Completed • Review Unit'
+                      : 'Complete & Mark Finished'}
+                  </span>
                 </button>
 
                 {/* Next Action Link */}

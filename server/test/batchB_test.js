@@ -324,7 +324,7 @@ export const runBatchBTests = async () => {
     const personaRes = await fetch(`${BASE_URL}/auth/persona-login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ personaId: 'user-sarah' }),
+      body: JSON.stringify({ personaId: 'user-sarah', password: 'CultivateAdmin@2026' }),
     });
     const personaData = await personaRes.json();
     recordTest(
@@ -332,7 +332,7 @@ export const runBatchBTests = async () => {
       'Test demo persona login (POST /api/auth/persona-login)',
       personaRes.status === 200 &&
         personaData.user?.role === 'admin' &&
-        personaData.user?.email === 'sarah.jenkins@terralearn.org',
+        (personaData.user?.email === 'sarah.jenkins@cultivate.org' || personaData.user?.email === 'sarah.jenkins@terralearn.org'),
       `Signed in as: ${personaData.user?.name} [Role: ${personaData.user?.role}]`
     );
 

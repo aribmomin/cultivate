@@ -4,11 +4,11 @@ import { CourseProgress } from '../models/CourseProgress.js';
 import { QuizAttempt } from '../models/QuizAttempt.js';
 
 export const LEVEL_TIERS = [
-  { level: 1, title: 'Soil Apprentice', minXp: 0, maxXp: 249, badge: '🌱' },
-  { level: 2, title: 'Junior Agronomist', minXp: 250, maxXp: 599, badge: '🌿' },
-  { level: 3, title: 'Ecological Cultivator', minXp: 600, maxXp: 1099, badge: '🌾' },
-  { level: 4, title: 'Regenerative Farmer', minXp: 1100, maxXp: 1799, badge: '🚜' },
-  { level: 5, title: 'Master Soil Steward', minXp: 1800, maxXp: 99999, badge: '👑' },
+  { level: 1, title: 'Soil Apprentice', minXp: 0, maxXp: 249, badge: 'Sprout', badgeSymbol: 'Sprout' },
+  { level: 2, title: 'Junior Agronomist', minXp: 250, maxXp: 599, badge: 'Leaf', badgeSymbol: 'Leaf' },
+  { level: 3, title: 'Ecological Cultivator', minXp: 600, maxXp: 1099, badge: 'Wheat', badgeSymbol: 'Wheat' },
+  { level: 4, title: 'Regenerative Farmer', minXp: 1100, maxXp: 1799, badge: 'Tractor', badgeSymbol: 'Tractor' },
+  { level: 5, title: 'Master Soil Steward', minXp: 1800, maxXp: 99999, badge: 'Crown', badgeSymbol: 'Crown' },
 ];
 
 export const BADGE_DEFINITIONS = [

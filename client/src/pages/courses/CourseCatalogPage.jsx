@@ -1,15 +1,33 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, X, Clock, ArrowRight, Filter, Award } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { MOCK_COURSES } from '../../data/mockCourses';
 import { progressService } from '../../services/progressService';
+import { useAuth } from '../../context/useAuth';
 
 export const CourseCatalogPage = () => {
+  const { user, isAuthenticated } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedDifficulty, setSelectedDifficulty] = useState('All');
+  const [, setProgressTick] = useState(0);
+
+  // Sync latest user progress on mount and user identity changes
+  useEffect(() => {
+    let isMounted = true;
+    if (user?._id) {
+      progressService.syncProgress(user._id).then(() => {
+        if (isMounted) setProgressTick((t) => t + 1);
+      });
+    } else {
+      setProgressTick((t) => t + 1);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [user?._id]);
 
   // Categories extracted dynamically from course data
   const categories = useMemo(() => {
@@ -149,8 +167,12 @@ export const CourseCatalogPage = () => {
         {filteredCourses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredCourses.map((course) => {
-              const progressPct = progressService.getCourseProgressPercentage(course.id, course.lessonsCount);
-              const quizRecord = progressService.getQuizResult(course.id);
+              const progressPct = (isAuthenticated && user?._id)
+                ? progressService.getCourseProgressPercentage(course.id, course.lessonsCount, user._id)
+                : 0;
+              const quizRecord = (isAuthenticated && user?._id)
+                ? progressService.getQuizResult(course.id, user._id)
+                : null;
               const isFinished = progressPct === 100 && quizRecord?.passed;
 
               return (

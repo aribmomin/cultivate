@@ -1,7 +1,15 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sprout, AlertTriangle, Sparkles, CheckCircle2, Droplets, Bug, Leaf, Flower2 } from 'lucide-react';
+import { Sprout, AlertTriangle, Sparkles, CheckCircle2, Droplets, Bug, Leaf } from 'lucide-react';
 import { MOCK_CROPS } from '../../../data/mockCrops';
+
+const CROP_EMOJIS = {
+  'crop-tomato': '🍅',
+  'crop-wheat': '🌾',
+  'crop-corn': '🌽',
+  'crop-carrot': '🥕',
+  'crop-rice': '🌾',
+};
 
 export const FarmTile = ({
   tile,
@@ -55,9 +63,9 @@ export const FarmTile = ({
             title={`Companion: ${tile.plantedCrop.companion.name}`}
           >
             {tile.plantedCrop.companion.type === 'marigold' ? (
-              <Flower2 className="w-3.5 h-3.5 text-amber-500" />
+              <span className="text-sm select-none" role="img" aria-label="Marigold">🌼</span>
             ) : (
-              <Leaf className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="text-sm select-none" role="img" aria-label="Clover">☘️</span>
             )}
           </div>
         )}
@@ -78,9 +86,17 @@ export const FarmTile = ({
           >
             {stageIndex === 0 && <Sprout className="w-6 h-6 text-emerald-600" />}
             {stageIndex === 1 && <Sprout className="w-8 h-8 text-emerald-700" />}
-            {stageIndex === 2 && <Leaf className="w-8 h-8 text-emerald-600" />}
-            {stageIndex === 3 && <Sprout className="w-9 h-9 text-emerald-700" />}
-            {stageIndex >= 4 && <Sparkles className="w-9 h-9 text-amber-500" />}
+            {stageIndex === 2 && <span className="text-2xl select-none" role="img" aria-label="Flowering">🌸</span>}
+            {stageIndex === 3 && (
+              <span className="text-2xl sm:text-3xl select-none" role="img" aria-label={cropDef.name}>
+                {CROP_EMOJIS[cropDef.id] || '🌱'}
+              </span>
+            )}
+            {stageIndex >= 4 && (
+              <span className="text-3xl sm:text-4xl select-none" role="img" aria-label={cropDef.name}>
+                {CROP_EMOJIS[cropDef.id] || '✨'}
+              </span>
+            )}
           </div>
         </motion.div>
 

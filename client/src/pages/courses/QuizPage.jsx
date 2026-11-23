@@ -1,32 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Award, CheckCircle2, XCircle, RefreshCw, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { MOCK_COURSES } from '../../data/mockCourses';
 import { progressService } from '../../services/progressService';
+import { useAuth } from '../../context/useAuth';
 
 export const QuizPage = () => {
   const { id: courseId } = useParams();
+  const { user } = useAuth();
 
   const course = MOCK_COURSES.find((c) => c.id === courseId || c.slug === courseId);
 
   // Pure initialization from stored result if previously taken
   const [selectedAnswers, setSelectedAnswers] = useState(() => {
-    if (!course) return {};
-    const past = progressService.getQuizResult(course.id);
+    if (!course || !user?._id) return {};
+    const past = progressService.getQuizResult(course.id, user._id);
     return past?.answers || {};
   });
 
   const [submitted, setSubmitted] = useState(() => {
-    if (!course) return false;
-    const past = progressService.getQuizResult(course.id);
+    if (!course || !user?._id) return false;
+    const past = progressService.getQuizResult(course.id, user._id);
     return Boolean(past);
   });
 
   const [scoreData, setScoreData] = useState(() => {
-    if (!course) return null;
-    const past = progressService.getQuizResult(course.id);
+    if (!course || !user?._id) return null;
+    const past = progressService.getQuizResult(course.id, user._id);
     if (!past) return null;
     return {
       score: past.score,
@@ -36,6 +38,24 @@ export const QuizPage = () => {
       answers: past.answers || {},
     };
   });
+
+  // Re-sync quiz status if user or course changes
+  useEffect(() => {
+    if (course && user?._id) {
+      const past = progressService.getQuizResult(course.id, user._id);
+      if (past) {
+        setSelectedAnswers(past.answers || {});
+        setSubmitted(true);
+        setScoreData({
+          score: past.score,
+          passed: past.passed,
+          correctCount: Math.round((past.score / 100) * course.quiz.questions.length),
+          totalQuestions: course.quiz.questions.length,
+          answers: past.answers || {},
+        });
+      }
+    }
+  }, [course?.id, user?._id]);
 
   const [validationError, setValidationError] = useState('');
 
@@ -105,8 +125,8 @@ export const QuizPage = () => {
     setSubmitted(true);
     setValidationError('');
 
-    // Persist to service
-    progressService.saveQuizResult(course.id, result);
+    // Persist to service with user namespace
+    progressService.saveQuizResult(course.id, result, user?._id);
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

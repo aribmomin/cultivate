@@ -55,7 +55,7 @@ export const runBatchCTests = async () => {
     const adminLoginRes = await fetch(`${BASE_URL}/auth/persona-login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ personaId: 'user-sarah' })
+      body: JSON.stringify({ personaId: 'user-sarah', password: 'CultivateAdmin@2026' })
     });
     const adminLoginData = await adminLoginRes.json();
     const tokenAdmin = adminLoginData.token;
@@ -106,7 +106,7 @@ export const runBatchCTests = async () => {
     const occPlantRes = await fetch(`${BASE_URL}/farms/action`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokenA}` },
-      body: JSON.stringify({ actionType: 'plant', tileId: 'tile-A1', cropId: 'crop-carrot' })
+      body: JSON.stringify({ actionType: 'plant', tileId: 'tile-A3', cropId: 'crop-carrot' })
     });
     const occPlantData = await occPlantRes.json();
     recordTest(
@@ -172,19 +172,19 @@ export const runBatchCTests = async () => {
 
     // TEST 7: Advance day progresses growth and updates weather
     const dayBeforeAdvance = currentFarmA.day;
-    const tileA1DaysBefore = currentFarmA.tiles.find(t => t.id === 'tile-A1').plantedCrop?.daysPlanted || 0;
+    const tileA3DaysBefore = currentFarmA.tiles.find(t => t.id === 'tile-A3').plantedCrop?.daysPlanted || 0;
     const advanceRes = await fetch(`${BASE_URL}/farms/advance-day`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${tokenA}` }
     });
     const advanceData = await advanceRes.json();
     const dayAfterAdvance = advanceData.farm?.day;
-    const tileA1DaysAfter = advanceData.farm?.tiles.find(t => t.id === 'tile-A1').plantedCrop?.daysPlanted || 0;
+    const tileA3DaysAfter = advanceData.farm?.tiles.find(t => t.id === 'tile-A3').plantedCrop?.daysPlanted || 0;
     recordTest(
       7,
       'Advance day progresses growth and updates weather',
-      advanceRes.status === 200 && dayAfterAdvance === dayBeforeAdvance + 1 && tileA1DaysAfter === tileA1DaysBefore + 1,
-      `Advanced Day ${dayBeforeAdvance} -> Day ${dayAfterAdvance}, Tile A1 daysPlanted: ${tileA1DaysBefore} -> ${tileA1DaysAfter}`
+      advanceRes.status === 200 && dayAfterAdvance === dayBeforeAdvance + 1 && tileA3DaysAfter === tileA3DaysBefore + 1,
+      `Advanced Day ${dayBeforeAdvance} -> Day ${dayAfterAdvance}, Tile A3 daysPlanted: ${tileA3DaysBefore} -> ${tileA3DaysAfter}`
     );
     currentFarmA = advanceData.farm;
 
@@ -206,12 +206,19 @@ export const runBatchCTests = async () => {
     currentFarmA = adv2Data.farm;
 
     // TEST 9: Companion plants reduce neighbor pest risk or enhance nitrogen
-    const tileA1Companion = currentFarmA.tiles.find(t => t.id === 'tile-A1').plantedCrop?.companion;
+    await fetch(`${BASE_URL}/farms/action`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokenA}` },
+      body: JSON.stringify({ actionType: 'addCompanion', tileId: 'tile-A3', companionType: 'marigold' })
+    });
+    const farmWithCompanion = await (await fetch(`${BASE_URL}/farms/me`, { headers: { Authorization: `Bearer ${tokenA}` } })).json();
+    currentFarmA = farmWithCompanion.farm;
+    const tileA3Companion = currentFarmA.tiles.find(t => t.id === 'tile-A3').plantedCrop?.companion;
     recordTest(
       9,
       'Companion plants reduce neighbor pest risk or enhance nitrogen',
-      tileA1Companion !== null && tileA1Companion?.type === 'marigold',
-      `Tile A1 French Marigold companion verified: "${tileA1Companion?.label}"`
+      tileA3Companion !== null && tileA3Companion?.type === 'marigold',
+      `Tile A3 French Marigold companion verified: "${tileA3Companion?.label}"`
     );
 
     // TEST 10: Rain bonus adds moisture to all tiles
@@ -267,13 +274,13 @@ export const runBatchCTests = async () => {
 
     // TEST 13: Harvest crop at or after minHarvestDay succeeds
     await Farm.findOneAndUpdate(
-      { userId: userIdA, 'tiles.id': 'tile-A1' },
-      { $set: { 'tiles.$.plantedCrop.daysPlanted': 30, 'tiles.$.plantedCrop.health': 95, 'tiles.$.plantedCrop.readyToHarvest': true } }
+      { userId: userIdA, 'tiles.id': 'tile-A3' },
+      { $set: { 'tiles.$.plantedCrop.daysPlanted': 70, 'tiles.$.plantedCrop.health': 95, 'tiles.$.plantedCrop.readyToHarvest': true } }
     );
     const validHarvestRes = await fetch(`${BASE_URL}/farms/action`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokenA}` },
-      body: JSON.stringify({ actionType: 'harvest', tileId: 'tile-A1' })
+      body: JSON.stringify({ actionType: 'harvest', tileId: 'tile-A3' })
     });
     const validHarvestData = await validHarvestRes.json();
     recordTest(
@@ -303,12 +310,12 @@ export const runBatchCTests = async () => {
     );
 
     // TEST 16: Harvest clears the tile or marks it fallow/ready
-    const harvestedTileA1 = validHarvestData.farm?.tiles.find(t => t.id === 'tile-A1');
+    const harvestedTileA3 = validHarvestData.farm?.tiles.find(t => t.id === 'tile-A3');
     recordTest(
       16,
       'Harvest clears the tile or marks it fallow/ready',
-      harvestedTileA1?.plantedCrop === null && harvestedTileA1?.previousCrop === 'Heritage Tomato',
-      `Tile A1 cleared: plantedCrop=null, previousCrop="${harvestedTileA1?.previousCrop}"`
+      harvestedTileA3?.plantedCrop === null && harvestedTileA3?.previousCrop === 'Sweet Golden Corn',
+      `Tile A3 cleared: plantedCrop=null, previousCrop="${harvestedTileA3?.previousCrop}"`
     );
 
     // TEST 17: Farm state persists across server restarts
@@ -329,7 +336,7 @@ export const runBatchCTests = async () => {
     recordTest(
       18,
       'Reset farm restores baseline state (POST /api/farms/reset)',
-      resetRes.status === 200 && resetData.farm?.day === 16 && resetData.farm?.budget === 650 && resetData.farm?.tiles.length === 12,
+      resetRes.status === 200 && resetData.farm?.day === 1 && resetData.farm?.budget === 650 && resetData.farm?.tiles.length === 12,
       `Reset to Day ${resetData.farm?.day}, Budget: $${resetData.farm?.budget}, Tiles: ${resetData.farm?.tiles.length}`
     );
     currentFarmA = resetData.farm;

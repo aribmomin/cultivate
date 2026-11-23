@@ -5,6 +5,14 @@ import { MOCK_CROPS } from '../../../data/mockCrops';
 import { SEED_PRICES } from '../../../services/farmSimulationService';
 import { Button } from '../../../components/common/Button';
 
+const CROP_EMOJIS = {
+  'crop-tomato': '🍅',
+  'crop-wheat': '🌾',
+  'crop-corn': '🌽',
+  'crop-carrot': '🥕',
+  'crop-rice': '🌾',
+};
+
 export const PlantingModal = ({
   isOpen,
   tile,
@@ -89,7 +97,9 @@ export const PlantingModal = ({
                         borderColor: `${crop.color}35`
                       }}
                     >
-                      <Sprout className="w-6 h-6 text-emerald-600" />
+                      <span className="text-2xl select-none" role="img" aria-label={crop.name}>
+                        {CROP_EMOJIS[crop.id] || '🌱'}
+                      </span>
                     </div>
 
                     <div>

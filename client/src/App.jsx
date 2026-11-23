@@ -15,6 +15,7 @@ import { AuthPage } from './pages/auth/AuthPage';
 import { AdminPortalPage } from './pages/admin/AdminPortalPage';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 // Scroll-to-top handler on route changes with hash navigation support
 function ScrollToTop() {
@@ -50,43 +51,85 @@ export default function App() {
             <Navbar />
             <main className="flex-1">
               <Routes>
+                {/* Public routes */}
                 <Route path="/" element={<LandingPage />} />
-                
-                {/* Interactive Learning Management Routes (SRS LEARN-REQ-01 to 07) */}
                 <Route path="/courses" element={<CourseCatalogPage />} />
-                <Route path="/courses/:id" element={<CourseDetailsPage />} />
-                <Route path="/courses/:id/lessons/:lessonId" element={<LessonViewerPage />} />
-                <Route path="/courses/:id/quiz" element={<QuizPage />} />
-
-                {/* Interactive 2D Farm Simulator Studio (SRS SIM-REQ-01 to 12) */}
-                <Route path="/simulator" element={<FarmSimulatorPage />} />
-
-                {/* Academic Leaderboard & Gamification (SRS GAME-REQ-01 to 06) */}
-                <Route path="/leaderboard" element={<LeaderboardPage />} />
-
-                {/* Authentication & Profile Routes (SRS AUTH-REQ-01 to 06) */}
                 <Route path="/login" element={<AuthPage initialMode="login" />} />
                 <Route path="/register" element={<AuthPage initialMode="register" />} />
-                {/* Administration Console UI Preview (SRS ADMIN-REQ-01 to 07) */}
-                <Route path="/admin" element={<AdminPortalPage />} />
 
-            {/* Fallback route */}
-            <Route
-              path="*"
-              element={
-                <PlaceholderPage
-                  title="Page Not Found"
-                  description="The page you are looking for does not exist or has moved."
-                  step="404 Error"
+                {/* Protected: Course Learning Routes (SRS LEARN-REQ-01 to 07) */}
+                <Route
+                  path="/courses/:id"
+                  element={
+                    <ProtectedRoute>
+                      <CourseDetailsPage />
+                    </ProtectedRoute>
+                  }
                 />
-              }
-            />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
-    </BrowserRouter>
-  </AuthProvider>
-</ThemeProvider>
+                <Route
+                  path="/courses/:id/lessons/:lessonId"
+                  element={
+                    <ProtectedRoute>
+                      <LessonViewerPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/courses/:id/quiz"
+                  element={
+                    <ProtectedRoute>
+                      <QuizPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Protected: Interactive 2D Farm Simulator Studio (SRS SIM-REQ-01 to 12) */}
+                <Route
+                  path="/simulator"
+                  element={
+                    <ProtectedRoute>
+                      <FarmSimulatorPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Protected: Academic Leaderboard & Gamification (SRS GAME-REQ-01 to 06) */}
+                <Route
+                  path="/leaderboard"
+                  element={
+                    <ProtectedRoute>
+                      <LeaderboardPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Protected: Administration Console UI (SRS ADMIN-REQ-01 to 07) */}
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute>
+                      <AdminPortalPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Fallback route */}
+                <Route
+                  path="*"
+                  element={
+                    <PlaceholderPage
+                      title="Page Not Found"
+                      description="The page you are looking for does not exist or has moved."
+                      step="404 Error"
+                    />
+                  }
+                />
+              </Routes>
+            </main>
+            <Footer />
+          </div>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

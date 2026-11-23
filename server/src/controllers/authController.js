@@ -25,11 +25,12 @@ const ALLOWED_DEMO_PERSONAS = [
   },
   {
     personaId: 'user-sarah',
-    email: 'sarah.jenkins@terralearn.org',
+    email: 'sarah.jenkins@cultivate.org',
+    legacyEmail: 'sarah.jenkins@terralearn.org',
     name: 'Dr. Sarah Jenkins',
     role: 'admin',
     roleLabel: 'Curriculum Administrator',
-    institution: 'TerraLearn Foundation',
+    institution: 'Cultivate Foundation',
     avatar: 'SJ',
     bio: 'Curriculum director overseeing biological farming courses, quiz calibrations, and simulator rule coefficients.',
   },
@@ -141,7 +142,12 @@ export const login = async (req, res) => {
   const normalizedEmail = email.trim().toLowerCase();
 
   // Explicitly select passwordHash
-  const user = await User.findOne({ email: normalizedEmail }).select('+password');
+  let user = await User.findOne({ email: normalizedEmail }).select('+password');
+  if (!user && (normalizedEmail === 'sarah.jenkins@cultivate.org' || normalizedEmail === 'sarah.jenkins@terralearn.org')) {
+    user = await User.findOne({
+      email: { $in: ['sarah.jenkins@cultivate.org', 'sarah.jenkins@terralearn.org'] },
+    }).select('+password');
+  }
   if (!user) {
     return res.status(401).json({
       success: false,
@@ -186,7 +192,7 @@ export const personaLogin = async (req, res) => {
   const matchedPersona = ALLOWED_DEMO_PERSONAS.find(
     (p) =>
       (personaId && p.personaId === personaId) ||
-      (email && p.email.toLowerCase() === email.trim().toLowerCase())
+      (email && (p.email.toLowerCase() === email.trim().toLowerCase() || (p.legacyEmail && p.legacyEmail.toLowerCase() === email.trim().toLowerCase())))
   );
 
   if (!matchedPersona) {
@@ -197,12 +203,34 @@ export const personaLogin = async (req, res) => {
     });
   }
 
+  // Admin persona guard: Always require administrator password
+  if (matchedPersona.role === 'admin') {
+    const { password } = req.body;
+    if (!password) {
+      return res.status(401).json({
+        success: false,
+        message: 'Admin authentication requires the administrator password.',
+      });
+    }
+    const adminUser = await User.findOne({
+      email: { $in: [matchedPersona.email, matchedPersona.legacyEmail] },
+    }).select('+password');
+    if (!adminUser || !(await adminUser.matchPassword(password))) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid administrator password.',
+      });
+    }
+  }
+
   // Retrieve or upsert the persona in database
-  let user = await User.findOne({ email: matchedPersona.email });
+  let user = await User.findOne({
+    email: { $in: [matchedPersona.email, ...(matchedPersona.legacyEmail ? [matchedPersona.legacyEmail] : [])] },
+  });
   if (!user) {
     user = await User.create({
       ...matchedPersona,
-      password: 'password123',
+      password: matchedPersona.role === 'admin' ? 'CultivateAdmin@2026' : 'password123',
     });
   }
 

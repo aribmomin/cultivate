@@ -111,8 +111,9 @@ export const TileInspector = ({
             <span className="text-gray-600">Companion System:</span>
             <span className="font-semibold text-[#0E2A1E]">
               {tile.plantedCrop.companion ? (
-                <span className="text-emerald-700">
-                  {tile.plantedCrop.companion.name} ({tile.plantedCrop.companion.label})
+                <span className="text-emerald-700 inline-flex items-center gap-1">
+                  <span>{tile.plantedCrop.companion.type === 'marigold' ? '🌼' : '☘️'}</span>
+                  <span>{tile.plantedCrop.companion.name} ({tile.plantedCrop.companion.label})</span>
                 </span>
               ) : (
                 <span className="text-gray-400">None intercropped</span>
@@ -361,7 +362,7 @@ export const TileInspector = ({
                       className="p-2 rounded-lg bg-white border border-amber-200 hover:border-amber-400 text-left cursor-pointer text-[10px]"
                     >
                       <div className="font-bold text-amber-900 flex items-center gap-1">
-                        <Flower2 className="w-3 h-3 text-amber-600" /> French Marigold
+                        <span className="text-xs">🌼</span> French Marigold
                       </div>
                       <div className="text-gray-500">Pest Shield (-$15)</div>
                     </button>
@@ -373,7 +374,7 @@ export const TileInspector = ({
                       className="p-2 rounded-lg bg-white border border-emerald-200 hover:border-emerald-400 text-left cursor-pointer text-[10px]"
                     >
                       <div className="font-bold text-emerald-900 flex items-center gap-1">
-                        <Leaf className="w-3 h-3 text-emerald-600" /> White Clover
+                        <span className="text-xs">☘️</span> White Clover
                       </div>
                       <div className="text-gray-500">Fix Nitrogen (-$15)</div>
                     </button>

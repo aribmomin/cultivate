@@ -2,7 +2,11 @@ import { apiClient } from './apiClient';
 
 const AUTH_STORAGE_KEY = 'cultivate_auth_user_v1';
 const TOKEN_STORAGE_KEY = 'cultivate_auth_token_v1';
+const PROGRESS_PREFIX = 'cultivate_progress_';
+const FARM_STORAGE_KEY = 'cultivate_farm_simulator_v2';
+const ADMIN_CONFIG_KEY = 'cultivate_admin_config_v1';
 
+// DEMO_PERSONAS is kept for reference but no longer rendered in AuthPage UI
 export const DEMO_PERSONAS = [
   {
     id: 'user-elena',
@@ -35,6 +39,26 @@ export const DEMO_PERSONAS = [
     bio: 'Curriculum director overseeing biological farming courses, quiz calibrations, and simulator rule coefficients.',
   },
 ];
+
+/** Clear all user-namespaced caches from localStorage */
+function clearAllUserCaches() {
+  try {
+    // Clear progress caches (all users)
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith(PROGRESS_PREFIX) || k === 'cultivate_learning_progress_v1')) {
+        keysToRemove.push(k);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+
+    // Clear farm simulator cache
+    localStorage.removeItem(FARM_STORAGE_KEY);
+  } catch {
+    // ignore storage errors
+  }
+}
 
 export const authService = {
   // Retrieve currently active session synchronously from local cache
@@ -87,7 +111,7 @@ export const authService = {
     }
   },
 
-  // 1-Click login for academic demo personas via backend API
+  // Persona login for academic demo accounts — requires server validation
   async loginAsPersona(personaId) {
     try {
       const res = await apiClient.post('/auth/persona-login', { personaId });
@@ -102,15 +126,11 @@ export const authService = {
       }
       return { success: false, reason: res.data?.message || 'Persona login failed.' };
     } catch (err) {
-      // Fallback to offline demo persona if server is temporarily unreachable
-      const persona = DEMO_PERSONAS.find((p) => p.id === personaId) || DEMO_PERSONAS[0];
-      const sessionUser = {
-        ...persona,
-        token: `offline-token-${persona.id}-${Date.now()}`,
-        loggedInAt: new Date().toISOString(),
+      // No offline fallback — persona login requires server validation
+      return {
+        success: false,
+        reason: err.extractedMessage || 'Persona login failed. Please check your connection.',
       };
-      this.setCurrentUser(sessionUser, sessionUser.token);
-      return { success: true, user: sessionUser };
     }
   },
 
@@ -143,19 +163,20 @@ export const authService = {
     }
   },
 
-  // Logout via backend API to revoke token
+  // Logout via backend API to revoke token, then clear ALL cached user data
   async logout() {
     try {
       await apiClient.post('/auth/logout');
     } catch {
-      // ignore network errors on logout
+      // ignore network errors on logout — still clear local state
     } finally {
+      clearAllUserCaches();
       this.setCurrentUser(null);
     }
     return { success: true };
   },
 
-  // Fetch current user from server
+  // Fetch current user from server and update cached profile
   async getProfile() {
     try {
       const res = await apiClient.get('/auth/me');

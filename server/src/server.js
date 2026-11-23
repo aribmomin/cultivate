@@ -10,7 +10,7 @@ connectDB();
 // Start Express Server
 const server = app.listen(PORT, () => {
   console.log(`\n======================================================`);
-  console.log(`🌱 TerraLearn Organic Farming Backend API`);
+  console.log(`🌱 Cultivate Organic Farming Backend API`);
   console.log(`🚀 Server running in [${process.env.NODE_ENV || 'development'}] mode`);
   console.log(`📡 URL: http://localhost:${PORT}`);
   console.log(`🩺 Health: http://localhost:${PORT}/api/health`);

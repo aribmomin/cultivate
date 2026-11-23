@@ -25,9 +25,17 @@ import { adminService } from '../../services/adminService';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 
+const CROP_EMOJIS = {
+  'crop-tomato': '🍅',
+  'crop-wheat': '🌾',
+  'crop-corn': '🌽',
+  'crop-carrot': '🥕',
+  'crop-rice': '🌾',
+};
+
 export const AdminPortalPage = () => {
   const { user, login } = useAuth();
-  const [adminEmail, setAdminEmail] = useState('sarah.jenkins@cultivate.org');
+  const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [adminAuthError, setAdminAuthError] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -341,13 +349,7 @@ export const AdminPortalPage = () => {
               Sign In to Admin Console
             </Button>
 
-            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-[11px] text-emerald-800 dark:text-emerald-300 space-y-1">
-              <div className="font-bold flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5" /> Designated Admin Credentials:
-              </div>
-              <div className="font-mono text-[10.5px]">Email: sarah.jenkins@cultivate.org</div>
-              <div className="font-mono text-[10.5px]">Password: CultivateAdmin@2026</div>
-            </div>
+
           </form>
         </motion.div>
       </div>
@@ -902,7 +904,9 @@ export const AdminPortalPage = () => {
                           borderColor: `${crop.color}40`
                         }}
                       >
-                        <Sprout className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                        <span className="text-2xl select-none" role="img" aria-label={crop.name}>
+                          {CROP_EMOJIS[crop.cropId || crop.id] || '🌱'}
+                        </span>
                       </div>
                       <div>
                         <h3 className="text-sm font-bold text-[#0E2A1E] dark:text-white">
