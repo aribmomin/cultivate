@@ -11,7 +11,10 @@ import { LessonViewerPage } from './pages/courses/LessonViewerPage';
 import { QuizPage } from './pages/courses/QuizPage';
 import { FarmSimulatorPage } from './pages/simulator/FarmSimulatorPage';
 import { LeaderboardPage } from './pages/leaderboard/LeaderboardPage';
+import { AuthPage } from './pages/auth/AuthPage';
+import { AdminPortalPage } from './pages/admin/AdminPortalPage';
 import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider } from './context/AuthContext';
 
 // Scroll-to-top handler on route changes with hash navigation support
 function ScrollToTop() {
@@ -40,47 +43,32 @@ function ScrollToTop() {
 export default function App() {
   return (
     <ThemeProvider>
-      <BrowserRouter>
-        <ScrollToTop />
-        <div className="min-h-screen flex flex-col bg-[#FBFBF9] dark:bg-[#0B1510] text-[#1A221D] dark:text-[#E5EAE6] transition-colors duration-200">
-          <Navbar />
-          <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              
-              {/* Interactive Learning Management Routes (SRS LEARN-REQ-01 to 07) */}
-              <Route path="/courses" element={<CourseCatalogPage />} />
-              <Route path="/courses/:id" element={<CourseDetailsPage />} />
-              <Route path="/courses/:id/lessons/:lessonId" element={<LessonViewerPage />} />
-              <Route path="/courses/:id/quiz" element={<QuizPage />} />
+      <AuthProvider>
+        <BrowserRouter>
+          <ScrollToTop />
+          <div className="min-h-screen flex flex-col bg-[#FBFBF9] dark:bg-[#0B1510] text-[#1A221D] dark:text-[#E5EAE6] transition-colors duration-200">
+            <Navbar />
+            <main className="flex-1">
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                
+                {/* Interactive Learning Management Routes (SRS LEARN-REQ-01 to 07) */}
+                <Route path="/courses" element={<CourseCatalogPage />} />
+                <Route path="/courses/:id" element={<CourseDetailsPage />} />
+                <Route path="/courses/:id/lessons/:lessonId" element={<LessonViewerPage />} />
+                <Route path="/courses/:id/quiz" element={<QuizPage />} />
 
-              {/* Interactive 2D Farm Simulator Studio (SRS SIM-REQ-01 to 12) */}
-              <Route path="/simulator" element={<FarmSimulatorPage />} />
+                {/* Interactive 2D Farm Simulator Studio (SRS SIM-REQ-01 to 12) */}
+                <Route path="/simulator" element={<FarmSimulatorPage />} />
 
-              {/* Academic Leaderboard & Gamification (SRS GAME-REQ-01 to 06) */}
-              <Route path="/leaderboard" element={<LeaderboardPage />} />
-            <Route
-              path="/login"
-              element={
-                <PlaceholderPage
-                  title="Learner Sign In"
-                  moduleName="Authentication"
-                  step="Phase 1 • Step 6"
-                  description="Student and Administrator login portals with persistent JWT sessions."
-                />
-              }
-            />
-            <Route
-              path="/admin"
-              element={
-                <PlaceholderPage
-                  title="Administration Portal"
-                  moduleName="Admin"
-                  step="Phase 1 • Step 7"
-                  description="Restricted management console for editing course units, crop coefficients, and simulation rules."
-                />
-              }
-            />
+                {/* Academic Leaderboard & Gamification (SRS GAME-REQ-01 to 06) */}
+                <Route path="/leaderboard" element={<LeaderboardPage />} />
+
+                {/* Authentication & Profile Routes (SRS AUTH-REQ-01 to 06) */}
+                <Route path="/login" element={<AuthPage initialMode="login" />} />
+                <Route path="/register" element={<AuthPage initialMode="register" />} />
+                {/* Administration Console UI Preview (SRS ADMIN-REQ-01 to 07) */}
+                <Route path="/admin" element={<AdminPortalPage />} />
 
             {/* Fallback route */}
             <Route
@@ -98,6 +86,7 @@ export default function App() {
         <Footer />
       </div>
     </BrowserRouter>
-  </ThemeProvider>
+  </AuthProvider>
+</ThemeProvider>
   );
 }
