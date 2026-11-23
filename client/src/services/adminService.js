@@ -1,5 +1,6 @@
 import { MOCK_COURSES } from '../data/mockCourses';
 import { MOCK_CROPS } from '../data/mockCrops';
+import { apiClient } from './apiClient';
 
 const ADMIN_STORAGE_KEY = 'terralearn_admin_config_v1';
 
@@ -222,5 +223,46 @@ export const adminService = {
       // ignore
     }
     return getStoredAdminData();
+  },
+
+  // --- Backend API Integrations (MongoDB Single Source of Truth) ---
+  async getOverviewApi() {
+    const res = await apiClient.get('/admin/overview');
+    return res.data;
+  },
+
+  async toggleCourseStatusApi(courseId) {
+    const res = await apiClient.patch(`/admin/courses/${courseId}/status`);
+    return res.data;
+  },
+
+  async addCourseApi(courseData) {
+    const res = await apiClient.post('/admin/courses', courseData);
+    return res.data;
+  },
+
+  async addQuestionApi(courseId, questionData) {
+    const res = await apiClient.post(`/admin/courses/${courseId}/quiz/questions`, questionData);
+    return res.data;
+  },
+
+  async updateCropApi(cropId, updatedParams) {
+    const res = await apiClient.put(`/admin/crops/${cropId}`, updatedParams);
+    return res.data;
+  },
+
+  async getSimulationCoefficientsApi() {
+    const res = await apiClient.get('/admin/simulation-coefficients');
+    return res.data?.coefficients;
+  },
+
+  async updateCoefficientsApi(newCoefficients) {
+    const res = await apiClient.put('/admin/simulation-coefficients', newCoefficients);
+    return res.data?.coefficients;
+  },
+
+  async getAuditLogsApi(limit = 50) {
+    const res = await apiClient.get(`/admin/audit-logs?limit=${limit}`);
+    return res.data?.auditLogs || [];
   }
 };

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, AlertCircle, Info, Sparkles } from 'lucide-react';
+import { useAuth } from '../../context/useAuth';
 import { farmSimulationService } from '../../services/farmSimulationService';
 import { FarmStatusHUD } from './components/FarmStatusHUD';
 import { FarmGrid } from './components/FarmGrid';
@@ -10,6 +11,7 @@ import { HarvestModal } from './components/HarvestModal';
 import { ActivityLog } from './components/ActivityLog';
 
 export const FarmSimulatorPage = () => {
+  const { isAuthenticated } = useAuth();
   // Pure initializer to prevent cascading renders
   const [farm, setFarm] = useState(() => farmSimulationService.loadFarmState());
   const [selectedTileId, setSelectedTileId] = useState('tile-A1');
@@ -17,6 +19,23 @@ export const FarmSimulatorPage = () => {
   const [plantingModalOpen, setPlantingModalOpen] = useState(false);
   const [harvestModalData, setHarvestModalData] = useState(null);
   const [notification, setNotification] = useState(null);
+
+  // Sync with MongoDB backend when authenticated
+  useEffect(() => {
+    let isMounted = true;
+    if (isAuthenticated) {
+      farmSimulationService.getFarmStateApi()
+        .then((freshFarm) => {
+          if (isMounted && freshFarm) {
+            setFarm(freshFarm);
+          }
+        })
+        .catch(() => {});
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated]);
 
   // Active selected tile object
   const selectedTile = farm.tiles.find((t) => t.id === selectedTileId) || farm.tiles[0];
@@ -29,9 +48,32 @@ export const FarmSimulatorPage = () => {
   };
 
   // Turn Progression: Advance Day
-  const handleAdvanceDay = () => {
+  const handleAdvanceDay = async () => {
     if (isAdvancing) return;
     setIsAdvancing(true);
+
+    if (isAuthenticated) {
+      try {
+        const result = await farmSimulationService.advanceDayApi();
+        if (result.success && result.farm) {
+          setFarm(result.farm);
+          if (result.warnings && result.warnings.length > 0) {
+            triggerNotification(
+              `Advanced to Day ${result.farm.day}! ${result.warnings.length} advisory issue(s) need attention.`,
+              'warning'
+            );
+          } else {
+            triggerNotification(`Advanced to Day ${result.farm.day}! Plant growth updated.`, 'success');
+          }
+          setIsAdvancing(false);
+          return;
+        }
+      } catch (err) {
+        triggerNotification(err.extractedMessage || 'Server error advancing simulation day.', 'error');
+        setIsAdvancing(false);
+        return;
+      }
+    }
 
     const result = farmSimulationService.advanceDay(farm);
     setFarm(result.farm);
@@ -49,8 +91,23 @@ export const FarmSimulatorPage = () => {
   };
 
   // Reset Simulation
-  const handleReset = () => {
+  const handleReset = async () => {
     if (window.confirm('Reset virtual farm back to initial Day 16 state? All custom planted plots will be restored to baseline.')) {
+      if (isAuthenticated) {
+        try {
+          const res = await farmSimulationService.resetFarmStateApi();
+          if (res.success && res.farm) {
+            setFarm(res.farm);
+            setSelectedTileId('tile-A1');
+            triggerNotification('Farm reset to initial Day 16 baseline state on server.', 'info');
+            return;
+          }
+        } catch (err) {
+          triggerNotification(err.extractedMessage || 'Server error resetting farm.', 'error');
+          return;
+        }
+      }
+
       const pristine = farmSimulationService.resetFarmState();
       setFarm(pristine);
       setSelectedTileId('tile-A1');
@@ -63,78 +120,84 @@ export const FarmSimulatorPage = () => {
     setSelectedTileId(tile.id);
   };
 
-  // Operations
-  const handleConfirmPlant = (tileId, cropId) => {
-    const res = farmSimulationService.plantCrop(farm, tileId, cropId);
-    if (!res.success) {
-      triggerNotification(res.reason, 'error');
+  // Unified Action Dispatcher (Server authoritative, offline fallback)
+  const executeFarmAction = async (actionType, tileId, extraParams = {}, onCustomSuccess = null) => {
+    if (isAuthenticated) {
+      try {
+        const res = await farmSimulationService.performActionApi(actionType, tileId, extraParams);
+        if (!res.success) {
+          triggerNotification(res.reason || res.message, 'error');
+          return;
+        }
+        setFarm(res.farm);
+        if (onCustomSuccess) {
+          onCustomSuccess(res);
+        } else {
+          triggerNotification(res.message, 'success');
+        }
+        return;
+      } catch (err) {
+        triggerNotification(err.extractedMessage || 'Server error performing farm action.', 'error');
+        return;
+      }
+    }
+
+    let res;
+    if (actionType === 'plant') res = farmSimulationService.plantCrop(farm, tileId, extraParams.cropId);
+    else if (actionType === 'irrigate') res = farmSimulationService.irrigateTile(farm, tileId);
+    else if (actionType === 'compost') res = farmSimulationService.applyCompost(farm, tileId);
+    else if (actionType === 'neem') res = farmSimulationService.applyNeemSpray(farm, tileId);
+    else if (actionType === 'companion') res = farmSimulationService.addCompanion(farm, tileId, extraParams.companionType);
+    else if (actionType === 'harvest') res = farmSimulationService.harvestCrop(farm, tileId);
+    else if (actionType === 'clear') res = farmSimulationService.clearCrop(farm, tileId);
+
+    if (!res || !res.success) {
+      triggerNotification(res?.reason || 'Action failed', 'error');
       return;
     }
     setFarm(res.farm);
-    setPlantingModalOpen(false);
-    triggerNotification(res.message, 'success');
+    if (onCustomSuccess) {
+      onCustomSuccess(res);
+    } else {
+      triggerNotification(res.message, 'success');
+    }
+  };
+
+  const handleConfirmPlant = (tileId, cropId) => {
+    executeFarmAction('plant', tileId, { cropId }, (res) => {
+      setPlantingModalOpen(false);
+      triggerNotification(res.message, 'success');
+    });
   };
 
   const handleIrrigate = (tileId) => {
-    const res = farmSimulationService.irrigateTile(farm, tileId);
-    if (!res.success) {
-      triggerNotification(res.reason, 'error');
-      return;
-    }
-    setFarm(res.farm);
-    triggerNotification(res.message, 'success');
+    executeFarmAction('irrigate', tileId);
   };
 
   const handleCompost = (tileId) => {
-    const res = farmSimulationService.applyCompost(farm, tileId);
-    if (!res.success) {
-      triggerNotification(res.reason, 'error');
-      return;
-    }
-    setFarm(res.farm);
-    triggerNotification(res.message, 'success');
+    executeFarmAction('compost', tileId);
   };
 
   const handleNeemSpray = (tileId) => {
-    const res = farmSimulationService.applyNeemSpray(farm, tileId);
-    if (!res.success) {
-      triggerNotification(res.reason, 'error');
-      return;
-    }
-    setFarm(res.farm);
-    triggerNotification(res.message, 'success');
+    executeFarmAction('neem', tileId);
   };
 
   const handleAddCompanion = (tileId, companionType) => {
-    const res = farmSimulationService.addCompanion(farm, tileId, companionType);
-    if (!res.success) {
-      triggerNotification(res.reason, 'error');
-      return;
-    }
-    setFarm(res.farm);
-    triggerNotification(res.message, 'success');
+    executeFarmAction('companion', tileId, { companionType });
   };
 
   const handleHarvest = (tileId) => {
-    const res = farmSimulationService.harvestCrop(farm, tileId);
-    if (!res.success) {
-      triggerNotification(res.reason, 'error');
-      return;
-    }
-    setFarm(res.farm);
-    setHarvestModalData(res.harvestData);
-    triggerNotification(res.message, 'success');
+    executeFarmAction('harvest', tileId, {}, (res) => {
+      setHarvestModalData(res.harvestData);
+      triggerNotification(res.message, 'success');
+    });
   };
 
   const handleClearCrop = (tileId) => {
     if (window.confirm('Plow under and clear this plot? The current crop will be removed to create a clean fallow bed.')) {
-      const res = farmSimulationService.clearCrop(farm, tileId);
-      if (!res.success) {
-        triggerNotification(res.reason, 'error');
-        return;
-      }
-      setFarm(res.farm);
-      triggerNotification(res.message, 'info');
+      executeFarmAction('clear', tileId, {}, (res) => {
+        triggerNotification(res.message, 'info');
+      });
     }
   };
 

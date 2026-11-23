@@ -1,6 +1,7 @@
 import { progressService } from './progressService';
 import { farmSimulationService } from './farmSimulationService';
 import { MOCK_COURSES } from '../data/mockCourses';
+import { apiClient } from './apiClient';
 
 // Level progression thresholds (SRS GAME-REQ-04)
 export const LEVEL_TIERS = [
@@ -173,11 +174,10 @@ export const gamificationService = {
       completedLessonCount += lessons.length;
       totalLessonXp += lessons.length * 50;
 
-      // Course completion bonus (+150 XP if all lessons done)
+      // Note: Course completion tracks completedCourseCount without extra arbitrary XP per SRS
       const courseDef = MOCK_COURSES.find((c) => c.id === courseId);
       if (courseDef && courseDef.lessons && lessons.length >= courseDef.lessons.length) {
         completedCourseCount += 1;
-        totalLessonXp += 150;
       }
     });
 
@@ -357,6 +357,64 @@ export const gamificationService = {
       userRank,
       userStats,
       totalLearners: ranked.length
+    };
+  },
+
+  // --- Backend API Integrations (MongoDB Ground Truth) ---
+  async getUserStatsApi() {
+    const res = await apiClient.get('/gamification/stats');
+    return res.data?.stats;
+  },
+
+  async getBadgesApi() {
+    const res = await apiClient.get('/gamification/badges');
+    return res.data?.badges || [];
+  },
+
+  async getLeaderboardDataApi(page = 1, limit = 20) {
+    const [lbRes, statsRes] = await Promise.all([
+      apiClient.get(`/leaderboard?page=${page}&limit=${limit}`),
+      apiClient.get('/gamification/stats').catch(() => null)
+    ]);
+
+    const lbData = lbRes.data;
+    const backendStats = statsRes?.data?.stats;
+
+    // Map backend leaderboard items to the frontend shape expected by LeaderboardPage
+    const ranked = (lbData.leaderboard || []).map((item) => ({
+      id: item.userId,
+      displayName: item.name,
+      institution: item.role === 'admin' ? 'Faculty Admin' : 'Academic Cohort',
+      avatar: (item.name || 'U').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(),
+      baseXp: item.xp,
+      lessonsCompleted: item.lessonsCompleted || 0,
+      quizzesPassed: item.quizzesPassed || 0,
+      cropsHarvested: item.cropsHarvested || 0,
+      topBadge: item.badgesCount > 0 ? `${item.badgesCount} Badges` : 'Soil Apprentice',
+      isCurrentUser: !!item.isCurrentUser,
+      isSample: false,
+      rank: item.rank
+    }));
+
+    // If active user is not in the page or returned separately
+    const activeRankedItem = ranked.find((l) => l.isCurrentUser);
+
+    const localStats = this.getUserStats();
+    const mergedStats = backendStats
+      ? {
+          ...localStats,
+          ...backendStats,
+          breakdown: backendStats.breakdown || localStats.breakdown || { lessonXp: 0, quizXp: 0, simulationXp: 0 },
+          badges: backendStats.badges || localStats.badges || []
+        }
+      : localStats;
+
+    return {
+      ranked,
+      userRank: activeRankedItem?.rank || 1,
+      userStats: mergedStats,
+      totalLearners: lbData.pagination?.totalUsers || ranked.length,
+      pagination: lbData.pagination
     };
   }
 };

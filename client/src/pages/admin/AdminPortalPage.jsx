@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield,
@@ -53,23 +53,95 @@ export const AdminPortalPage = () => {
     }, 3500);
   };
 
-  const reloadData = () => {
+  // Role Gate: Must be Admin (SRS ADMIN-REQ-01)
+  const isAdmin = user && user.role === 'admin';
+
+  // Background load from backend when user is admin
+  useEffect(() => {
+    let isMounted = true;
+    if (isAdmin) {
+      adminService.getOverviewApi()
+        .then((overview) => {
+          if (isMounted && overview) {
+            setData((prev) => ({
+              ...prev,
+              courses: overview.courses || prev.courses,
+              crops: overview.crops || prev.crops,
+              coefficients: overview.coefficients || prev.coefficients,
+              auditLogs: overview.auditLogs || prev.auditLogs,
+              metrics: overview.metrics
+            }));
+            if (overview.coefficients) setCoefficients(overview.coefficients);
+          }
+        })
+        .catch(() => {});
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [isAdmin]);
+
+  const reloadData = async () => {
+    if (isAdmin) {
+      try {
+        const overview = await adminService.getOverviewApi();
+        if (overview) {
+          setData((prev) => ({ ...prev, ...overview }));
+          if (overview.coefficients) setCoefficients(overview.coefficients);
+          return;
+        }
+      } catch {
+        // Fallback to local
+      }
+    }
     const updated = adminService.getAdminData();
     setData(updated);
     setCoefficients(updated.coefficients);
   };
 
   // 1. Course Status Toggle
-  const handleToggleCourse = (courseId) => {
+  const handleToggleCourse = async (courseId) => {
+    if (isAdmin) {
+      try {
+        await adminService.toggleCourseStatusApi(courseId);
+        await reloadData();
+        showToast('Course publish status updated successfully in MongoDB.');
+        return;
+      } catch (err) {
+        showToast(err.extractedMessage || 'Server error updating course status.', 'error');
+        return;
+      }
+    }
     adminService.toggleCourseStatus(courseId);
     reloadData();
     showToast('Course publish status updated successfully.');
   };
 
   // 2. Add New Course
-  const handleCreateCourse = (e) => {
+  const handleCreateCourse = async (e) => {
     e.preventDefault();
     if (!newCourseTitle.trim()) return;
+
+    if (isAdmin) {
+      try {
+        await adminService.addCourseApi({
+          title: newCourseTitle,
+          category: newCourseCategory,
+          difficulty: newCourseDifficulty,
+          duration: newCourseDuration,
+          description: newCourseDesc || 'Comprehensive biological principles course.'
+        });
+        await reloadData();
+        setShowAddCourse(false);
+        setNewCourseTitle('');
+        setNewCourseDesc('');
+        showToast(`Created course "${newCourseTitle}" in MongoDB!`);
+        return;
+      } catch (err) {
+        showToast(err.extractedMessage || 'Server error creating course.', 'error');
+        return;
+      }
+    }
 
     adminService.addCourse({
       title: newCourseTitle,
@@ -87,9 +159,32 @@ export const AdminPortalPage = () => {
   };
 
   // 3. Add Quiz Question
-  const handleAddQuestion = (e) => {
+  const handleAddQuestion = async (e) => {
     e.preventDefault();
     if (!newQuestionText.trim() || !newOpt0.trim() || !newOpt1.trim()) return;
+
+    if (isAdmin) {
+      try {
+        await adminService.addQuestionApi(selectedQuizCourseId, {
+          question: newQuestionText,
+          options: [newOpt0, newOpt1, newOpt2 || 'None of the above', newOpt3 || 'All of the above'],
+          correctAnswer: parseInt(newCorrectIdx, 10),
+          explanation: newExplanation || 'Ground truth grounded in approved organic farming curriculum.'
+        });
+        await reloadData();
+        setNewQuestionText('');
+        setNewOpt0('');
+        setNewOpt1('');
+        setNewOpt2('');
+        setNewOpt3('');
+        setNewExplanation('');
+        showToast('Question authored and saved to MongoDB.');
+        return;
+      } catch (err) {
+        showToast(err.extractedMessage || 'Server error adding question.', 'error');
+        return;
+      }
+    }
 
     adminService.addQuestion(selectedQuizCourseId, {
       question: newQuestionText,
@@ -109,8 +204,20 @@ export const AdminPortalPage = () => {
   };
 
   // 4. Save Coefficients
-  const handleSaveCoefficients = (e) => {
+  const handleSaveCoefficients = async (e) => {
     e.preventDefault();
+    if (isAdmin) {
+      try {
+        const updated = await adminService.updateCoefficientsApi(coefficients);
+        if (updated) setCoefficients(updated);
+        await reloadData();
+        showToast('Environmental simulation coefficients saved to MongoDB.');
+        return;
+      } catch (err) {
+        showToast(err.extractedMessage || 'Server error updating coefficients.', 'error');
+        return;
+      }
+    }
     adminService.updateCoefficients(coefficients);
     reloadData();
     showToast('Environmental simulation coefficients saved and active.');
@@ -124,9 +231,6 @@ export const AdminPortalPage = () => {
       showToast('All administrative configurations restored to defaults.', 'info');
     }
   };
-
-  // Role Gate: Must be Admin (SRS ADMIN-REQ-01)
-  const isAdmin = user && user.role === 'admin';
 
   if (!isAdmin) {
     return (

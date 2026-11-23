@@ -21,7 +21,7 @@ const saveStoredData = (data) => {
 };
 
 export const progressService = {
-  // Sync latest progress from MongoDB backend
+  // Sync latest progress from MongoDB backend (authoritative source of truth)
   async syncProgress() {
     try {
       const res = await apiClient.get('/progress');
@@ -38,13 +38,13 @@ export const progressService = {
         saveStoredData(data);
         return data;
       }
-    } catch {
-      // ignore sync errors if offline
+    } catch (err) {
+      console.warn('Could not sync progress from backend:', err);
     }
     return getStoredData();
   },
 
-  // Get completed lesson IDs for a specific course (synchronous for immediate UI rendering)
+  // Get completed lesson IDs for a specific course (synchronous read from cache)
   getCompletedLessons(courseId) {
     const data = getStoredData();
     return data.completedLessons[courseId] || [];
@@ -56,38 +56,26 @@ export const progressService = {
     return lessons.includes(lessonId);
   },
 
-  // Toggle completion status of a lesson via API and update local cache
+  // Toggle completion status of a lesson via API. MongoDB is source of truth.
   async toggleLessonCompletion(courseId, lessonId) {
-    // 1. Update local cache immediately for responsive UI
-    const data = getStoredData();
-    if (!data.completedLessons[courseId]) {
-      data.completedLessons[courseId] = [];
-    }
-    const current = data.completedLessons[courseId];
-    const exists = current.includes(lessonId);
-
-    if (exists) {
-      data.completedLessons[courseId] = current.filter((id) => id !== lessonId);
-    } else {
-      data.completedLessons[courseId] = [...current, lessonId];
-    }
-    saveStoredData(data);
-
-    // 2. Persist to MongoDB backend and award XP
     try {
       const res = await apiClient.post(`/progress/lessons/${lessonId}/toggle`, {
         courseId,
       });
+
       if (res.data?.success && Array.isArray(res.data.completedLessons)) {
+        const data = getStoredData();
         data.completedLessons[courseId] = res.data.completedLessons;
         saveStoredData(data);
-        return res.data.isCompleted;
+        return { success: true, isCompleted: res.data.isCompleted };
       }
+      return { success: false, reason: res.data?.message || 'Server rejected lesson update.' };
     } catch (err) {
-      console.warn('API error toggling lesson, preserved local state.', err);
+      return {
+        success: false,
+        reason: err.extractedMessage || 'Network error updating progress.',
+      };
     }
-
-    return !exists;
   },
 
   // Calculate course completion percentage based on completed lessons
@@ -104,15 +92,14 @@ export const progressService = {
   },
 
   // Save a quiz attempt to backend for server grading and update local cache
-  async saveQuizResult(courseId, { score, passed, answers }) {
-    const data = getStoredData();
-
-    // 1. Submit to backend API for secure server-side grading and XP awards
+  async saveQuizResult(courseId, { answers }) {
     try {
       const res = await apiClient.post(`/courses/${courseId}/quiz/submit`, {
         answers,
       });
+
       if (res.data?.success) {
+        const data = getStoredData();
         data.quizAttempts[courseId] = {
           score: res.data.score,
           passed: res.data.passed,
@@ -123,40 +110,31 @@ export const progressService = {
           lastAttemptAt: new Date().toISOString(),
         };
         saveStoredData(data);
-        return data.quizAttempts[courseId];
+        return { success: true, data: data.quizAttempts[courseId] };
       }
+      return { success: false, message: res.data?.message || 'Server rejected quiz submission.' };
     } catch (err) {
-      console.warn('API error submitting quiz, saving locally.', err);
+      return {
+        success: false,
+        message: err.extractedMessage || 'Network error submitting quiz.',
+      };
     }
-
-    // 2. Fallback to local calculation if offline
-    const existing = data.quizAttempts[courseId];
-    const highestScore = existing ? Math.max(existing.highestScore || 0, score) : score;
-
-    data.quizAttempts[courseId] = {
-      score,
-      passed,
-      highestScore,
-      answers,
-      lastAttemptAt: new Date().toISOString(),
-      attemptsCount: (existing?.attemptsCount || 0) + 1,
-    };
-
-    saveStoredData(data);
-    return data.quizAttempts[courseId];
   },
 
   // Reset progress for a course (calls backend API and resets local cache)
   async resetCourseProgress(courseId) {
-    const data = getStoredData();
-    delete data.completedLessons[courseId];
-    delete data.quizAttempts[courseId];
-    saveStoredData(data);
-
     try {
-      await apiClient.post(`/progress/courses/${courseId}/reset`);
+      const res = await apiClient.post(`/progress/courses/${courseId}/reset`);
+      if (res.data?.success) {
+        const data = getStoredData();
+        delete data.completedLessons[courseId];
+        delete data.quizAttempts[courseId];
+        saveStoredData(data);
+        return { success: true };
+      }
+      return { success: false, message: res.data?.message || 'Failed to reset progress.' };
     } catch (err) {
-      console.warn('API error resetting progress on server.', err);
+      return { success: false, message: err.extractedMessage || 'Network error resetting progress.' };
     }
   },
 

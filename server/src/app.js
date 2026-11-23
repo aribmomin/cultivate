@@ -6,6 +6,12 @@ import healthRoutes from './routes/healthRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import courseRoutes from './routes/courseRoutes.js';
 import progressRoutes from './routes/progressRoutes.js';
+import farmRoutes from './routes/farmRoutes.js';
+import cropRoutes from './routes/cropRoutes.js';
+import gamificationRoutes from './routes/gamificationRoutes.js';
+import leaderboardRoutes from './routes/leaderboardRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -54,6 +60,12 @@ app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/progress', progressRoutes);
+app.use('/api/farms', farmRoutes);
+app.use('/api/crops', cropRoutes);
+app.use('/api/gamification', gamificationRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // 404 Handler for undefined routes
 app.use(notFoundHandler);

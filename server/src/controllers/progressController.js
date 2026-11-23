@@ -168,12 +168,6 @@ export const toggleLessonCompletion = async (req, res) => {
   );
   progress.isCompleted = progress.progressPercentage === 100;
 
-  // Course completion bonus (+150 XP) awarded once
-  if (progress.isCompleted && !progress.courseBonusAwarded) {
-    progress.courseBonusAwarded = true;
-    xpAwarded += 150;
-  }
-
   progress.lastAccessedAt = new Date();
   await progress.save();
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Trophy,
@@ -17,11 +17,33 @@ import { gamificationService } from '../../services/gamificationService';
 import { Badge } from '../../components/common/Badge';
 
 export const LeaderboardPage = () => {
-  // Pure state initializer
-  const [data] = useState(() => gamificationService.getLeaderboardData());
+  // Pure state initializer with fallback
+  const [data, setData] = useState(() => gamificationService.getLeaderboardData());
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'top3', 'me'
 
-  const { ranked, userRank, userStats, totalLearners } = data;
+  // Fetch real database leaderboard on mount
+  useEffect(() => {
+    let isMounted = true;
+    gamificationService.getLeaderboardDataApi()
+      .then((fresh) => {
+        if (isMounted && fresh && fresh.ranked?.length > 0) {
+          setData(fresh);
+        }
+      })
+      .catch(() => {
+        // Keeps local fallback cleanly
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const {
+    ranked = [],
+    userRank = 1,
+    userStats = {},
+    totalLearners = 0,
+  } = data || {};
 
   // Filtered rows based on active tab
   const displayedLearners = ranked.filter((learner) => {
@@ -77,22 +99,22 @@ export const LeaderboardPage = () => {
             {/* User Level & Title */}
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-[#10B981] to-[#059669] flex items-center justify-center text-3xl shadow-sm text-white shrink-0">
-                {userStats.badgeSymbol}
+                {userStats?.badgeSymbol || '🌱'}
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                    Level {userStats.level}
+                    Level {userStats?.level || 1}
                   </span>
                   <span className="text-xs font-semibold text-gray-500">
-                    Rank #{userRank} of {totalLearners}
+                    Rank #{userRank || 1} of {totalLearners || 1}
                   </span>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-bold text-[#0E2A1E] mt-0.5">
-                  {userStats.title}
+                  {userStats?.title || 'Soil Apprentice'}
                 </h2>
                 <p className="text-xs text-gray-500">
-                  Active Learner Profile • Local Session Progress
+                  Active Learner Profile • Verified Progress
                 </p>
               </div>
             </div>
@@ -105,13 +127,13 @@ export const LeaderboardPage = () => {
                 </span>
                 <span className="text-2xl font-extrabold text-[#0E2A1E] flex items-center gap-1.5">
                   <Sparkles className="w-5 h-5 text-amber-500" />
-                  {userStats.totalXp} <span className="text-xs font-semibold text-gray-500">XP</span>
+                  {userStats?.totalXp ?? 0} <span className="text-xs font-semibold text-gray-500">XP</span>
                 </span>
               </div>
               <div className="text-right pl-4 border-l border-gray-200 text-[11px] text-gray-500">
-                <div>Lessons: +{userStats.breakdown.lessonXp} XP</div>
-                <div>Quizzes: +{userStats.breakdown.quizXp} XP</div>
-                <div>Farm: +{userStats.breakdown.simulationXp} XP</div>
+                <div>Lessons: +{userStats?.breakdown?.lessonXp ?? 0} XP</div>
+                <div>Quizzes: +{userStats?.breakdown?.quizXp ?? 0} XP</div>
+                <div>Farm: +{userStats?.breakdown?.simulationXp ?? 0} XP</div>
               </div>
             </div>
           </div>
@@ -119,17 +141,17 @@ export const LeaderboardPage = () => {
           {/* Progress to Next Tier */}
           <div className="mt-6">
             <div className="flex items-center justify-between text-xs font-semibold text-gray-600 mb-1.5">
-              <span>Progress to {userStats.nextTier ? userStats.nextTier.title : 'Max Tier'}</span>
+              <span>Progress to {userStats?.nextTier ? userStats.nextTier.title : 'Max Tier'}</span>
               <span>
-                {userStats.nextTier
-                  ? `${userStats.totalXp} / ${userStats.nextTier.minXp} XP (${userStats.levelProgressPct}%)`
+                {userStats?.nextTier
+                  ? `${userStats.totalXp ?? 0} / ${userStats.nextTier.minXp} XP (${userStats.levelProgressPct ?? 0}%)`
                   : 'Mastery Tier Achieved'}
               </span>
             </div>
             <div className="w-full bg-gray-200 h-2.5 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${userStats.levelProgressPct}%` }}
+                animate={{ width: `${userStats?.levelProgressPct ?? 0}%` }}
                 transition={{ duration: 0.8, ease: 'easeOut' }}
                 className="bg-linear-to-r from-[#10B981] to-[#059669] h-full rounded-full"
               />
@@ -142,7 +164,7 @@ export const LeaderboardPage = () => {
               <span className="text-gray-500 block mb-0.5">Lessons Completed</span>
               <span className="text-base font-bold text-[#0E2A1E] flex items-center gap-1">
                 <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
-                {userStats.completedLessonCount} Lessons
+                {userStats?.completedLessonCount ?? 0} Lessons
               </span>
             </div>
 
@@ -150,7 +172,7 @@ export const LeaderboardPage = () => {
               <span className="text-gray-500 block mb-0.5">Quizzes Passed</span>
               <span className="text-base font-bold text-[#0E2A1E] flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
-                {userStats.quizzesPassed} Quizzes
+                {userStats?.quizzesPassed ?? 0} Quizzes
               </span>
             </div>
 
@@ -158,7 +180,7 @@ export const LeaderboardPage = () => {
               <span className="text-gray-500 block mb-0.5">Crops Harvested</span>
               <span className="text-base font-bold text-[#0E2A1E] flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                {userStats.cropsHarvested} Harvests
+                {userStats?.cropsHarvested ?? 0} Harvests
               </span>
             </div>
 
@@ -166,7 +188,7 @@ export const LeaderboardPage = () => {
               <span className="text-gray-500 block mb-0.5">Badges Earned</span>
               <span className="text-base font-bold text-[#0E2A1E] flex items-center gap-1">
                 <Award className="w-3.5 h-3.5 text-purple-600" />
-                {userStats.unlockedBadgesCount} / {userStats.badges.length}
+                {userStats?.unlockedBadgesCount ?? 0} / {(userStats?.badges || []).length}
               </span>
             </div>
           </div>
@@ -184,12 +206,12 @@ export const LeaderboardPage = () => {
               </p>
             </div>
             <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-              {userStats.unlockedBadgesCount} Unlocked
+              {userStats?.unlockedBadgesCount ?? 0} Unlocked
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {userStats.badges.map((badge) => {
+            {(userStats?.badges || []).map((badge) => {
               const IconComp = getBadgeIcon(badge.icon);
 
               return (

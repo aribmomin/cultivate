@@ -1,4 +1,5 @@
 import { MOCK_CROPS } from '../data/mockCrops';
+import { apiClient } from './apiClient';
 
 const STORAGE_KEY = 'terralearn_farm_simulator_v1';
 
@@ -825,5 +826,48 @@ export const farmSimulationService = {
       farm: updated,
       warnings
     };
+  },
+
+  // --- Backend API Integrations (MongoDB Single Source of Truth) ---
+  async getFarmStateApi() {
+    const res = await apiClient.get('/farms/me');
+    if (res.data?.farm) {
+      this.saveFarmState(res.data.farm);
+      return res.data.farm;
+    }
+    return this.loadFarmState();
+  },
+
+  async advanceDayApi() {
+    const res = await apiClient.post('/farms/advance-day');
+    if (res.data?.farm) {
+      this.saveFarmState(res.data.farm);
+    }
+    return res.data;
+  },
+
+  async resetFarmStateApi() {
+    const res = await apiClient.post('/farms/reset');
+    if (res.data?.farm) {
+      this.saveFarmState(res.data.farm);
+    }
+    return res.data;
+  },
+
+  async performActionApi(actionType, tileId, extraParams = {}) {
+    const res = await apiClient.post('/farms/action', {
+      actionType,
+      tileId,
+      ...extraParams
+    });
+    if (res.data?.farm) {
+      this.saveFarmState(res.data.farm);
+    }
+    return res.data;
+  },
+
+  async getCropsApi() {
+    const res = await apiClient.get('/crops');
+    return res.data?.crops || [];
   }
 };
