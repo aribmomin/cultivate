@@ -23,6 +23,15 @@ const courseProgressSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    awardedLessonXpIds: [
+      {
+        type: String,
+      },
+    ],
+    courseBonusAwarded: {
+      type: Boolean,
+      default: false,
+    },
     progressPercentage: {
       type: Number,
       default: 0,

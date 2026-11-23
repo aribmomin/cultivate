@@ -1,36 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthContext } from './authContextInstance';
 import { authService } from '../services/authService';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => authService.getCurrentUser());
 
-  const login = (email, password) => {
-    const res = authService.login(email, password);
+  // Background profile synchronization on initial load
+  useEffect(() => {
+    let isMounted = true;
+    if (authService.getCurrentUser()) {
+      authService.getProfile().then((fresh) => {
+        if (isMounted && fresh) setUser(fresh);
+      });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const login = async (email, password) => {
+    const res = await authService.login(email, password);
     if (res.success) {
       setUser(res.user);
     }
     return res;
   };
 
-  const loginAsPersona = (personaId) => {
-    const res = authService.loginAsPersona(personaId);
+  const loginAsPersona = async (personaId) => {
+    const res = await authService.loginAsPersona(personaId);
     if (res.success) {
       setUser(res.user);
     }
     return res;
   };
 
-  const register = (params) => {
-    const res = authService.register(params);
+  const register = async (params) => {
+    const res = await authService.register(params);
     if (res.success) {
       setUser(res.user);
     }
     return res;
   };
 
-  const logout = () => {
-    authService.logout();
+  const logout = async () => {
+    await authService.logout();
     setUser(null);
   };
 

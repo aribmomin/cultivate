@@ -43,12 +43,12 @@ export const AuthPage = ({ initialMode = 'login' }) => {
   const [loading, setLoading] = useState(false);
 
   // Handle Login submission
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    const res = login(email, password);
+    const res = await login(email, password);
     setLoading(false);
 
     if (!res.success) {
@@ -63,7 +63,7 @@ export const AuthPage = ({ initialMode = 'login' }) => {
   };
 
   // Handle Register submission
-  const handleRegisterSubmit = (e) => {
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
@@ -73,7 +73,7 @@ export const AuthPage = ({ initialMode = 'login' }) => {
     }
 
     setLoading(true);
-    const res = register({
+    const res = await register({
       name,
       email,
       password,
@@ -94,9 +94,9 @@ export const AuthPage = ({ initialMode = 'login' }) => {
   };
 
   // Handle 1-Click Persona Login
-  const handlePersonaLogin = (personaId) => {
+  const handlePersonaLogin = async (personaId) => {
     setError(null);
-    const res = loginAsPersona(personaId);
+    const res = await loginAsPersona(personaId);
     if (res.success) {
       setSuccessMsg(`Signed in as ${res.user.name} (${res.user.roleLabel})`);
       setTimeout(() => {

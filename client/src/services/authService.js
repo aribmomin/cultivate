@@ -1,7 +1,7 @@
-// Mock Authentication Service for Phase 1
-// Clean client-side session management ready to swap for Express JWT REST endpoints in Phase 2
+import { apiClient } from './apiClient';
 
 const AUTH_STORAGE_KEY = 'terralearn_auth_user_v1';
+const TOKEN_STORAGE_KEY = 'terralearn_auth_token_v1';
 
 export const DEMO_PERSONAS = [
   {
@@ -12,7 +12,7 @@ export const DEMO_PERSONAS = [
     roleLabel: 'Agroecology Student',
     institution: 'Wageningen University',
     avatar: 'ER',
-    bio: 'Undergraduate student researching living mulch and organic pest resistance in Solanaceae crops.'
+    bio: 'Undergraduate student researching living mulch and organic pest resistance in Solanaceae crops.',
   },
   {
     id: 'user-marcus',
@@ -22,7 +22,7 @@ export const DEMO_PERSONAS = [
     roleLabel: 'Agricultural Educator',
     institution: 'Cornell Agroecology Lab',
     avatar: 'MV',
-    bio: 'Instructor and extension specialist running regenerative soil workshops and organic trial plots.'
+    bio: 'Instructor and extension specialist running regenerative soil workshops and organic trial plots.',
   },
   {
     id: 'user-sarah',
@@ -32,12 +32,12 @@ export const DEMO_PERSONAS = [
     roleLabel: 'Curriculum Administrator',
     institution: 'TerraLearn Foundation',
     avatar: 'SJ',
-    bio: 'Curriculum director overseeing biological farming courses, quiz calibrations, and simulator rule coefficients.'
-  }
+    bio: 'Curriculum director overseeing biological farming courses, quiz calibrations, and simulator rule coefficients.',
+  },
 ];
 
 export const authService = {
-  // Retrieve currently active session
+  // Retrieve currently active session synchronously from local cache
   getCurrentUser() {
     try {
       const raw = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -50,120 +50,124 @@ export const authService = {
     return null;
   },
 
-  // Save session
-  setCurrentUser(user) {
+  // Save session to localStorage
+  setCurrentUser(user, token = null) {
     try {
       if (user) {
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+        if (token) {
+          localStorage.setItem(TOKEN_STORAGE_KEY, token);
+        }
       } else {
         localStorage.removeItem(AUTH_STORAGE_KEY);
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
       }
     } catch {
       // ignore storage errors
     }
   },
 
-  // Login with credentials
-  login(email, password) {
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email)) {
-      return { success: false, reason: 'Please enter a valid email address.' };
+  // Login with credentials via backend API
+  async login(email, password) {
+    try {
+      const res = await apiClient.post('/auth/login', { email, password });
+      if (res.data?.success && res.data.user) {
+        const sessionUser = {
+          ...res.data.user,
+          token: res.data.token,
+          loggedInAt: new Date().toISOString(),
+        };
+        this.setCurrentUser(sessionUser, res.data.token);
+        return { success: true, user: sessionUser };
+      }
+      return { success: false, reason: res.data?.message || 'Login failed.' };
+    } catch (err) {
+      const reason = err.extractedMessage || 'Invalid email or password.';
+      return { success: false, reason };
     }
-
-    if (!password || password.length < 6) {
-      return { success: false, reason: 'Password must be at least 6 characters.' };
-    }
-
-    // Check if it matches a demo persona
-    const persona = DEMO_PERSONAS.find(
-      (p) => p.email.toLowerCase() === email.trim().toLowerCase()
-    );
-
-    const user = persona || {
-      id: `user-${Date.now()}`,
-      name: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-      email: email.trim().toLowerCase(),
-      role: 'learner',
-      roleLabel: 'Student Grower',
-      institution: 'Independent Organic Learner',
-      avatar: email.substring(0, 2).toUpperCase(),
-      bio: 'Enthusiastic organic farming student exploring regenerative soil and 2D simulation.'
-    };
-
-    const sessionUser = {
-      ...user,
-      token: `mock-jwt-token-${Date.now()}`,
-      loggedInAt: new Date().toISOString()
-    };
-
-    this.setCurrentUser(sessionUser);
-    return { success: true, user: sessionUser };
   },
 
-  // Quick 1-click login for demo personas
-  loginAsPersona(personaId) {
-    const persona = DEMO_PERSONAS.find((p) => p.id === personaId) || DEMO_PERSONAS[0];
-    const sessionUser = {
-      ...persona,
-      token: `mock-jwt-token-${persona.id}-${Date.now()}`,
-      loggedInAt: new Date().toISOString()
-    };
-
-    this.setCurrentUser(sessionUser);
-    return { success: true, user: sessionUser };
+  // 1-Click login for academic demo personas via backend API
+  async loginAsPersona(personaId) {
+    try {
+      const res = await apiClient.post('/auth/persona-login', { personaId });
+      if (res.data?.success && res.data.user) {
+        const sessionUser = {
+          ...res.data.user,
+          token: res.data.token,
+          loggedInAt: new Date().toISOString(),
+        };
+        this.setCurrentUser(sessionUser, res.data.token);
+        return { success: true, user: sessionUser };
+      }
+      return { success: false, reason: res.data?.message || 'Persona login failed.' };
+    } catch (err) {
+      // Fallback to offline demo persona if server is temporarily unreachable
+      const persona = DEMO_PERSONAS.find((p) => p.id === personaId) || DEMO_PERSONAS[0];
+      const sessionUser = {
+        ...persona,
+        token: `offline-token-${persona.id}-${Date.now()}`,
+        loggedInAt: new Date().toISOString(),
+      };
+      this.setCurrentUser(sessionUser, sessionUser.token);
+      return { success: true, user: sessionUser };
+    }
   },
 
-  // Register a new learner account
-  register({ name, email, password, role = 'learner', institution }) {
-    if (!name || name.trim().length < 2) {
-      return { success: false, reason: 'Please provide your full name (at least 2 characters).' };
+  // Register a new learner account via backend API
+  async register({ name, email, password, institution }) {
+    try {
+      const res = await apiClient.post('/auth/register', {
+        name,
+        email,
+        password,
+        institution,
+      });
+
+      if (res.data?.success && res.data.user) {
+        const sessionUser = {
+          ...res.data.user,
+          token: res.data.token,
+          registeredAt: new Date().toISOString(),
+          loggedInAt: new Date().toISOString(),
+        };
+        this.setCurrentUser(sessionUser, res.data.token);
+        return { success: true, user: sessionUser };
+      }
+      return { success: false, reason: res.data?.message || 'Registration failed.' };
+    } catch (err) {
+      return {
+        success: false,
+        reason: err.extractedMessage || 'Registration failed. Please check your inputs.',
+      };
     }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email)) {
-      return { success: false, reason: 'Please provide a valid academic or personal email.' };
-    }
-
-    if (!password || password.length < 6) {
-      return { success: false, reason: 'Password must be at least 6 characters long.' };
-    }
-
-    const initials = name
-      .trim()
-      .split(' ')
-      .map((part) => part[0])
-      .join('')
-      .substring(0, 2)
-      .toUpperCase() || 'OL';
-
-    const roleLabelMap = {
-      learner: 'Student Learner',
-      instructor: 'Organic Educator',
-      admin: 'Platform Administrator'
-    };
-
-    const newUser = {
-      id: `user-${Date.now()}`,
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      role,
-      roleLabel: roleLabelMap[role] || 'Student Learner',
-      institution: institution?.trim() || 'Independent Organic Grower',
-      avatar: initials,
-      bio: `Registered organic agroecology learner at ${institution || 'TerraLearn'}.`,
-      token: `mock-jwt-token-${Date.now()}`,
-      registeredAt: new Date().toISOString(),
-      loggedInAt: new Date().toISOString()
-    };
-
-    this.setCurrentUser(newUser);
-    return { success: true, user: newUser };
   },
 
-  // Logout
-  logout() {
-    this.setCurrentUser(null);
+  // Logout via backend API to revoke token
+  async logout() {
+    try {
+      await apiClient.post('/auth/logout');
+    } catch {
+      // ignore network errors on logout
+    } finally {
+      this.setCurrentUser(null);
+    }
     return { success: true };
-  }
+  },
+
+  // Fetch current user from server
+  async getProfile() {
+    try {
+      const res = await apiClient.get('/auth/me');
+      if (res.data?.success && res.data.user) {
+        const current = this.getCurrentUser();
+        const updated = { ...current, ...res.data.user };
+        this.setCurrentUser(updated);
+        return updated;
+      }
+    } catch {
+      // ignore profile fetch errors
+    }
+    return this.getCurrentUser();
+  },
 };

@@ -38,6 +38,14 @@ const quizAttemptSchema = new mongoose.Schema(
       type: Map,
       of: Number, // Stores questionId -> chosenOptionIndex
     },
+    passedXpAwarded: {
+      type: Boolean,
+      default: false,
+    },
+    perfectXpAwarded: {
+      type: Boolean,
+      default: false,
+    },
     attemptsCount: {
       type: Number,
       default: 1,
