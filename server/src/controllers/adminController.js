@@ -34,13 +34,41 @@ export const getAdminOverview = async (req, res) => {
     activeFarms,
     cropCatalogCount,
     recentAuditLogs,
+    rawCourses,
+    crops,
+    rawConfig,
   ] = await Promise.all([
     User.countDocuments({}),
     Course.countDocuments({}),
     Farm.countDocuments({}),
     Crop.countDocuments({}),
-    AuditLog.find({}).sort({ timestamp: -1 }).limit(10),
+    AuditLog.find({}).sort({ timestamp: -1 }).limit(50),
+    Course.find({}).sort({ order: 1, createdAt: -1 }).lean(),
+    Crop.find({}).sort({ name: 1 }),
+    SimulationConfig.findOne({ singletonKey: 'default' }),
   ]);
+
+  let coefficients = rawConfig;
+  if (!coefficients) {
+    coefficients = await SimulationConfig.create({ singletonKey: 'default' });
+  }
+
+  // Populate quiz questions for each course so admin authoring UI can inspect them
+  const quizzes = await Quiz.find({});
+  const quizMap = {};
+  quizzes.forEach((q) => {
+    const key = q.courseId?.toString() || q.courseCustomId;
+    if (key) quizMap[key] = q;
+  });
+
+  const courses = rawCourses.map((c) => {
+    const q = quizMap[c._id?.toString()] || quizMap[c.courseId];
+    return {
+      ...c,
+      id: c.courseId || c._id?.toString(),
+      quiz: q ? { title: q.title, questions: q.questions } : null,
+    };
+  });
 
   const metrics = {
     totalUsers,
@@ -55,8 +83,16 @@ export const getAdminOverview = async (req, res) => {
       ...metrics,
       cropCatalogCount,
       recentAuditLogs,
+      courses,
+      crops,
+      coefficients,
+      auditLogs: recentAuditLogs,
     },
     metrics,
+    courses,
+    crops,
+    coefficients,
+    auditLogs: recentAuditLogs,
   });
 };
 
@@ -304,6 +340,10 @@ export const updateSimulationCoefficients = async (req, res) => {
     config = new SimulationConfig({ singletonKey: 'default' });
   }
 
+  const oldInitialBudget = config.initialBudget || 650;
+  const newInitialBudget =
+    req.body.initialBudget !== undefined ? Number(req.body.initialBudget) : undefined;
+
   const allowedFields = [
     'initialBudget',
     'dailyEvaporationRate',
@@ -327,10 +367,25 @@ export const updateSimulationCoefficients = async (req, res) => {
 
   await config.save();
 
+  // If initial budget was modified, propagate to all existing untouched farms
+  if (newInitialBudget !== undefined && newInitialBudget !== oldInitialBudget) {
+    await Farm.updateMany(
+      {
+        day: 1,
+        totalHarvestRevenue: 0,
+        totalCropsHarvested: 0,
+        budget: oldInitialBudget,
+      },
+      {
+        $set: { budget: newInitialBudget },
+      }
+    );
+  }
+
   await recordAuditLog(
     req.user,
     'RULE_CONFIG',
-    'Updated global environmental simulation coefficients.'
+    `Updated global environmental simulation coefficients. Initial budget: $${config.initialBudget}.`
   );
 
   res.status(200).json({

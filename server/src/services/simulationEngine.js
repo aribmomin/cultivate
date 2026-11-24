@@ -77,13 +77,29 @@ export const simulationEngine = {
   // Get or initialize persistent user farm
   async getUserFarm(userId) {
     let farm = await Farm.findOne({ userId });
+    const coeffs = await this.getCoefficients();
+    const activeBudget = coeffs.initialBudget !== undefined ? coeffs.initialBudget : 650.0;
+
     if (!farm) {
-      const coeffs = await this.getCoefficients();
       farm = await Farm.create({
         userId,
         ...INITIAL_FARM_DATA,
-        budget: coeffs.initialBudget !== undefined ? coeffs.initialBudget : 650.0,
+        budget: activeBudget,
       });
+    } else {
+      // If the user's farm is completely untouched (Day 1, 0 revenue, 0 harvested, all plots fallow)
+      // and initialBudget in DB has changed, sync the budget to the global configuration
+      const isUntouched =
+        farm.day === 1 &&
+        farm.totalHarvestRevenue === 0 &&
+        farm.totalCropsHarvested === 0 &&
+        farm.tiles.every((t) => !t.plantedCrop) &&
+        farm.logs.every((l) => l.type === 'info');
+
+      if (isUntouched && farm.budget !== activeBudget) {
+        farm.budget = activeBudget;
+        await farm.save();
+      }
     }
     return farm;
   },
@@ -346,13 +362,14 @@ export const simulationEngine = {
         }
 
         // Strict enforcement of SRS SIM-REQ-11: Prevent premature harvesting
+        const minHarvest = Math.min(crop.minHarvestDay, crop.baseGrowthDays);
         if (
           !tile.plantedCrop.readyToHarvest &&
-          tile.plantedCrop.daysPlanted < crop.minHarvestDay
+          tile.plantedCrop.daysPlanted < minHarvest
         ) {
           return {
             success: false,
-            reason: `${crop.name} is only at Day ${tile.plantedCrop.daysPlanted}. Harvesting requires at least Day ${crop.minHarvestDay} (SRS SIM-REQ-11 prevents premature harvest).`,
+            reason: `${crop.name} is only at Day ${tile.plantedCrop.daysPlanted}. Harvesting requires reaching maturity at Day ${minHarvest} (SRS SIM-REQ-11 prevents premature harvest).`,
           };
         }
 
@@ -525,8 +542,10 @@ export const simulationEngine = {
         Math.floor(stageProgress * stages.length)
       );
 
-      const minHarvest = cropDef?.minHarvestDay || 50;
-      const isReadyToHarvest = tile.plantedCrop.daysPlanted >= minHarvest;
+      const minHarvest = Math.min(cropDef?.minHarvestDay || 50, totalGrowthDays);
+      const isReadyToHarvest =
+        tile.plantedCrop.daysPlanted >= minHarvest ||
+        tile.plantedCrop.stageIndex >= (stages.length - 1);
       tile.plantedCrop.readyToHarvest = isReadyToHarvest;
 
       // Biological Health

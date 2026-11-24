@@ -37,6 +37,7 @@ const ALLOWED_DEMO_PERSONAS = [
 ];
 
 const sanitizeUser = (user) => ({
+  _id: user._id.toString(),
   id: user._id.toString(),
   name: user.name,
   email: user.email,

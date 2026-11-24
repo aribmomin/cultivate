@@ -17,24 +17,38 @@ export const getAllProgress = async (req, res) => {
 
   const completedLessons = {};
   progressDocs.forEach((p) => {
-    const key = p.courseCustomId || p.courseId?._id?.toString() || p.courseId?.slug;
-    if (key) {
-      completedLessons[key] = p.completedLessonIds;
-    }
+    const keys = new Set(
+      [
+        p.courseCustomId,
+        p.courseId?.courseId,
+        p.courseId?._id?.toString(),
+        p.courseId?.slug,
+      ].filter(Boolean)
+    );
+    keys.forEach((k) => {
+      completedLessons[k] = p.completedLessonIds;
+    });
   });
 
   const quizAttempts = {};
   quizDocs.forEach((q) => {
-    const key = q.courseCustomId || q.courseId?._id?.toString() || q.courseId?.slug;
-    if (key) {
-      quizAttempts[key] = {
+    const keys = new Set(
+      [
+        q.courseCustomId,
+        q.courseId?.courseId,
+        q.courseId?._id?.toString(),
+        q.courseId?.slug,
+      ].filter(Boolean)
+    );
+    keys.forEach((k) => {
+      quizAttempts[k] = {
         score: q.score,
         passed: q.passed,
         highestScore: q.highestScore,
         attemptsCount: q.attemptsCount,
         lastAttemptAt: q.lastAttemptAt,
       };
-    }
+    });
   });
 
   res.status(200).json({
