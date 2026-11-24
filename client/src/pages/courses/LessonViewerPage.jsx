@@ -9,10 +9,11 @@ import { useAuth } from '../../context/useAuth';
 export const LessonViewerPage = () => {
   const { id: courseId, lessonId } = useParams();
   const { user } = useAuth();
+  const userId = user?._id || user?.id;
 
   const course = MOCK_COURSES.find((c) => c.id === courseId || c.slug === courseId);
   const [completedIds, setCompletedIds] = useState(() =>
-    course ? progressService.getCompletedLessons(course.id, user?._id) : []
+    course && userId ? progressService.getCompletedLessons(course.id, userId) : []
   );
   const [isToggling, setIsToggling] = useState(false);
   const [toggleError, setToggleError] = useState(null);
@@ -20,17 +21,17 @@ export const LessonViewerPage = () => {
   // Sync latest authoritative progress on mount or user change
   useEffect(() => {
     let isMounted = true;
-    if (course && user?._id) {
-      progressService.syncProgress(user._id).then(() => {
+    if (course && userId) {
+      progressService.syncProgress(userId).then(() => {
         if (isMounted) {
-          setCompletedIds(progressService.getCompletedLessons(course.id, user._id));
+          setCompletedIds(progressService.getCompletedLessons(course.id, userId));
         }
       });
     }
     return () => {
       isMounted = false;
     };
-  }, [course?.id, user?._id]);
+  }, [course?.id, userId]);
 
   // Invalid Course Handling
   if (!course) {
@@ -73,7 +74,7 @@ export const LessonViewerPage = () => {
   const nextLesson = hasNext ? course.lessons[currentLessonIndex + 1] : null;
 
   const totalLessons = course.lessons.length;
-  const progressPct = progressService.getCourseProgressPercentage(course.id, totalLessons, user?._id);
+  const progressPct = progressService.getCourseProgressPercentage(course.id, totalLessons, userId);
 
   // Authoritative Async Lesson Completion Toggle
   const toggleComplete = async () => {
@@ -82,9 +83,9 @@ export const LessonViewerPage = () => {
     setToggleError(null);
 
     try {
-      const res = await progressService.toggleLessonCompletion(course.id, currentLesson.id, user?._id);
+      const res = await progressService.toggleLessonCompletion(course.id, currentLesson.id, userId);
       if (res.success) {
-        setCompletedIds(progressService.getCompletedLessons(course.id, user?._id));
+        setCompletedIds(progressService.getCompletedLessons(course.id, userId));
       } else {
         setToggleError(res.reason || 'Failed to update progress on server.');
       }

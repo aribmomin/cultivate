@@ -9,24 +9,25 @@ import { useAuth } from '../../context/useAuth';
 export const CourseDetailsPage = () => {
   const { id } = useParams();
   const { user, isAuthenticated } = useAuth();
+  const userId = user?._id || user?.id;
 
   // Match by id or slug
   const course = MOCK_COURSES.find((c) => c.id === id || c.slug === id);
 
   const [completedLessonIds, setCompletedLessonIds] = useState(() =>
-    course && user?._id ? progressService.getCompletedLessons(course.id, user._id) : []
+    course && userId ? progressService.getCompletedLessons(course.id, userId) : []
   );
   const [quizRecord, setQuizRecord] = useState(() =>
-    course && user?._id ? progressService.getQuizResult(course.id, user._id) : null
+    course && userId ? progressService.getQuizResult(course.id, userId) : null
   );
 
   useEffect(() => {
     let isMounted = true;
-    if (course && user?._id) {
-      progressService.syncProgress(user._id).then(() => {
+    if (course && userId) {
+      progressService.syncProgress(userId).then(() => {
         if (isMounted) {
-          setCompletedLessonIds(progressService.getCompletedLessons(course.id, user._id));
-          setQuizRecord(progressService.getQuizResult(course.id, user._id));
+          setCompletedLessonIds(progressService.getCompletedLessons(course.id, userId));
+          setQuizRecord(progressService.getQuizResult(course.id, userId));
         }
       });
     } else {
@@ -36,7 +37,7 @@ export const CourseDetailsPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [course?.id, user?._id]);
+  }, [course?.id, userId]);
 
   // Invalid Course ID handling
   if (!course) {
@@ -63,8 +64,8 @@ export const CourseDetailsPage = () => {
   }
 
   const totalLessons = course.lessons.length;
-  const progressPct = (isAuthenticated && user?._id)
-    ? progressService.getCourseProgressPercentage(course.id, totalLessons, user._id)
+  const progressPct = (isAuthenticated && userId)
+    ? progressService.getCourseProgressPercentage(course.id, totalLessons, userId)
     : 0;
 
   // Find next uncompleted lesson to recommend
@@ -72,7 +73,7 @@ export const CourseDetailsPage = () => {
 
   const handleResetProgress = async () => {
     if (window.confirm('Are you sure you want to reset your progress for this course?')) {
-      await progressService.resetCourseProgress(course.id, user?._id);
+      await progressService.resetCourseProgress(course.id, userId);
       setCompletedLessonIds([]);
       setQuizRecord(null);
     }

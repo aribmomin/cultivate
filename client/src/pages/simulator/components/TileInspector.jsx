@@ -35,6 +35,15 @@ export const TileInspector = ({
     ? MOCK_CROPS.find((c) => c.id === tile.plantedCrop.cropId)
     : null;
 
+  const minHarvest = crop ? Math.min(crop.minHarvestDay, crop.baseGrowthDays) : 50;
+  const isReadyToHarvest = Boolean(
+    tile.plantedCrop && (
+      tile.plantedCrop.readyToHarvest ||
+      tile.plantedCrop.daysPlanted >= minHarvest ||
+      (crop && tile.plantedCrop.stageIndex >= (crop.growthStages.length - 1))
+    )
+  );
+
   return (
     <div className="bg-white rounded-3xl border border-[#D5DDD5] p-5 sm:p-6 shadow-sm flex flex-col gap-5">
       {/* Inspector Header */}
@@ -57,9 +66,9 @@ export const TileInspector = ({
           </p>
         </div>
 
-        {tile.plantedCrop && tile.plantedCrop.readyToHarvest && (
+        {tile.plantedCrop && isReadyToHarvest && (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-100 text-amber-800 border border-amber-300 animate-pulse">
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" /> Mature
+            <Sparkles className="w-3.5 h-3.5 text-amber-600" /> Ready to Harvest
           </span>
         )}
       </div>
@@ -241,21 +250,38 @@ export const TileInspector = ({
           </Button>
         )}
 
-        {/* If ready to harvest: prominent harvest button */}
-        {tile.plantedCrop && tile.plantedCrop.readyToHarvest && (
-          <Button
-            variant="nature"
-            size="md"
-            onClick={() => onHarvest(tile.id)}
-            icon={Sparkles}
-            className="w-full bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold shadow-md justify-between"
-          >
-            <span className="flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-amber-200" />
-              <span>Harvest Crop Now</span>
-            </span>
-            <span className="text-xs bg-amber-800/40 px-2 py-0.5 rounded-md">Collect Cash</span>
-          </Button>
+        {/* Harvest Action: Enabled when ready, disabled with explanation when immature */}
+        {tile.plantedCrop && (
+          isReadyToHarvest ? (
+            <Button
+              variant="nature"
+              size="md"
+              onClick={() => onHarvest(tile.id)}
+              icon={Sparkles}
+              className="w-full bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold shadow-md justify-between cursor-pointer"
+            >
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-amber-200" />
+                <span>Harvest Crop Now</span>
+              </span>
+              <span className="text-xs bg-amber-800/40 px-2 py-0.5 rounded-md">Ready to Harvest</span>
+            </Button>
+          ) : (
+            <div className="w-full flex items-center justify-between p-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-400 text-xs">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-gray-400" />
+                <div className="text-left">
+                  <div className="font-bold text-gray-600">Harvest Immature</div>
+                  <div className="text-[10px] text-gray-400">
+                    Matures Day {minHarvest} (Current: Day {tile.plantedCrop.daysPlanted} • {Math.max(0, minHarvest - tile.plantedCrop.daysPlanted)} days remaining)
+                  </div>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold bg-gray-200 text-gray-600 px-2 py-0.5 rounded-md">
+                Immature
+              </span>
+            </div>
+          )
         )}
 
         {/* Irrigation Action */}

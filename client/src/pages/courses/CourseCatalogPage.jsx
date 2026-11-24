@@ -14,11 +14,13 @@ export const CourseCatalogPage = () => {
   const [selectedDifficulty, setSelectedDifficulty] = useState('All');
   const [, setProgressTick] = useState(0);
 
+  const userId = user?._id || user?.id;
+
   // Sync latest user progress on mount and user identity changes
   useEffect(() => {
     let isMounted = true;
-    if (user?._id) {
-      progressService.syncProgress(user._id).then(() => {
+    if (userId) {
+      progressService.syncProgress(userId).then(() => {
         if (isMounted) setProgressTick((t) => t + 1);
       });
     } else {
@@ -27,7 +29,7 @@ export const CourseCatalogPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [user?._id]);
+  }, [userId]);
 
   // Categories extracted dynamically from course data
   const categories = useMemo(() => {
@@ -167,11 +169,11 @@ export const CourseCatalogPage = () => {
         {filteredCourses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredCourses.map((course) => {
-              const progressPct = (isAuthenticated && user?._id)
-                ? progressService.getCourseProgressPercentage(course.id, course.lessonsCount, user._id)
+              const progressPct = (isAuthenticated && userId)
+                ? progressService.getCourseProgressPercentage(course.id, course.lessonsCount, userId)
                 : 0;
-              const quizRecord = (isAuthenticated && user?._id)
-                ? progressService.getQuizResult(course.id, user._id)
+              const quizRecord = (isAuthenticated && userId)
+                ? progressService.getQuizResult(course.id, userId)
                 : null;
               const isFinished = progressPct === 100 && quizRecord?.passed;
 

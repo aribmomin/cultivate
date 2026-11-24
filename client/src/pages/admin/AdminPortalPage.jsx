@@ -66,6 +66,11 @@ export const AdminPortalPage = () => {
   // Simulation Coefficients Form State
   const [coefficients, setCoefficients] = useState(data.coefficients);
 
+  // Crop Calibration State
+  const [editingCropId, setEditingCropId] = useState(null);
+  const [cropFormState, setCropFormState] = useState({});
+  const [isSavingCrop, setIsSavingCrop] = useState(false);
+
   const showToast = (message, type = 'success') => {
     setNotification({ message, type });
     setTimeout(() => {
@@ -183,9 +188,14 @@ export const AdminPortalPage = () => {
     e.preventDefault();
     if (!newQuestionText.trim() || !newOpt0.trim() || !newOpt1.trim()) return;
 
+    const targetCourse = data.courses.find(
+      (c) => (c.courseId || c.id || c._id) === selectedQuizCourseId || c.id === selectedQuizCourseId || c.courseId === selectedQuizCourseId
+    ) || data.courses[0];
+    const targetCourseId = targetCourse?.courseId || targetCourse?.id || targetCourse?._id || selectedQuizCourseId;
+
     if (isAdmin) {
       try {
-        await adminService.addQuestionApi(selectedQuizCourseId, {
+        await adminService.addQuestionApi(targetCourseId, {
           question: newQuestionText,
           options: [newOpt0, newOpt1, newOpt2 || 'None of the above', newOpt3 || 'All of the above'],
           correctAnswer: parseInt(newCorrectIdx, 10),
@@ -206,7 +216,7 @@ export const AdminPortalPage = () => {
       }
     }
 
-    adminService.addQuestion(selectedQuizCourseId, {
+    adminService.addQuestion(targetCourseId, {
       question: newQuestionText,
       options: [newOpt0, newOpt1, newOpt2 || 'None of the above', newOpt3 || 'All of the above'],
       correctAnswer: parseInt(newCorrectIdx, 10),
@@ -221,6 +231,37 @@ export const AdminPortalPage = () => {
     setNewOpt3('');
     setNewExplanation('');
     showToast('Question authored and added to assessment.');
+  };
+
+  // Crop Calibration Handlers
+  const handleStartEditCrop = (crop) => {
+    const cid = crop.cropId || crop.id;
+    setEditingCropId(cid);
+    setCropFormState({
+      baseGrowthDays: crop.baseGrowthDays,
+      dailyWaterNeed: crop.dailyWaterNeed,
+      marketPricePerKg: crop.marketPricePerKg,
+      minHarvestDay: crop.minHarvestDay
+    });
+  };
+
+  const handleSaveCrop = async (crop) => {
+    const cid = crop.cropId || crop.id;
+    setIsSavingCrop(true);
+    try {
+      if (isAdmin) {
+        await adminService.updateCropApi(cid, cropFormState);
+      } else {
+        adminService.updateCrop(crop.id, cropFormState);
+      }
+      await reloadData();
+      setEditingCropId(null);
+      showToast(`Agronomic parameters for ${crop.name} calibrated successfully.`);
+    } catch (err) {
+      showToast(err.extractedMessage || 'Server error updating crop parameters.', 'error');
+    } finally {
+      setIsSavingCrop(false);
+    }
   };
 
   // 4. Save Coefficients
@@ -356,7 +397,9 @@ export const AdminPortalPage = () => {
     );
   }
 
-  const selectedCourse = data.courses.find((c) => c.id === selectedQuizCourseId) || data.courses[0];
+  const selectedCourse = data.courses.find(
+    (c) => (c.courseId || c.id || c._id) === selectedQuizCourseId || c.id === selectedQuizCourseId || c.courseId === selectedQuizCourseId
+  ) || data.courses[0];
 
   return (
     <div className="py-8 sm:py-12 bg-[#FBFBF9] dark:bg-[#0B1510] min-h-screen">
@@ -664,7 +707,7 @@ export const AdminPortalPage = () => {
                           <td className="py-3.5 px-4 sm:px-6 text-right">
                             <button
                               type="button"
-                              onClick={() => handleToggleCourse(course.id)}
+                              onClick={() => handleToggleCourse(course.courseId || course.id || course._id)}
                               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer border ${
                                 isActive
                                   ? 'border-amber-300 text-amber-700 hover:bg-amber-50'
@@ -705,11 +748,14 @@ export const AdminPortalPage = () => {
                   onChange={(e) => setSelectedQuizCourseId(e.target.value)}
                   className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#15261D] text-xs font-bold text-[#0E2A1E] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#10B981]"
                 >
-                  {data.courses.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.title} ({c.quiz?.questions?.length || 0} Qs)
-                    </option>
-                  ))}
+                  {data.courses.map((c) => {
+                    const cid = c.courseId || c.id || c._id;
+                    return (
+                      <option key={cid} value={cid}>
+                        {c.title} ({c.quiz?.questions?.length || 0} Qs)
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             </div>
@@ -890,60 +936,141 @@ export const AdminPortalPage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {data.crops.map((crop) => (
-                <div
-                  key={crop.id}
-                  className="bg-white dark:bg-[#12231A] rounded-3xl border border-[#D5DDD5] dark:border-[#1E382B] p-5 shadow-xs flex flex-col justify-between gap-4"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center border"
-                        style={{
-                          backgroundColor: `${crop.color}15`,
-                          borderColor: `${crop.color}40`
-                        }}
-                      >
-                        <span className="text-2xl select-none" role="img" aria-label={crop.name}>
-                          {CROP_EMOJIS[crop.cropId || crop.id] || '🌱'}
-                        </span>
+              {data.crops.map((crop) => {
+                const cid = crop.cropId || crop.id;
+                const isEditing = editingCropId === cid;
+
+                return (
+                  <div
+                    key={crop.id || cid}
+                    className="bg-white dark:bg-[#12231A] rounded-3xl border border-[#D5DDD5] dark:border-[#1E382B] p-5 shadow-xs flex flex-col justify-between gap-4"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-12 h-12 rounded-2xl flex items-center justify-center border"
+                          style={{
+                            backgroundColor: `${crop.color}15`,
+                            borderColor: `${crop.color}40`
+                          }}
+                        >
+                          <span className="text-2xl select-none" role="img" aria-label={crop.name}>
+                            {CROP_EMOJIS[crop.cropId || crop.id] || '🌱'}
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-[#0E2A1E] dark:text-white">
+                            {crop.name}
+                          </h3>
+                          <span className="text-[11px] text-gray-500 italic block">
+                            {crop.scientificName}
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-[#0E2A1E] dark:text-white">
-                          {crop.name}
-                        </h3>
-                        <span className="text-[11px] text-gray-500 italic block">
-                          {crop.scientificName}
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+                          ${crop.marketPricePerKg.toFixed(2)} / kg
                         </span>
+                        {!isEditing && (
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditCrop(crop)}
+                            className="px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-[#15261D]"
+                          >
+                            Calibrate
+                          </button>
+                        )}
                       </div>
                     </div>
 
-                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
-                      ${crop.marketPricePerKg.toFixed(2)} / kg
-                    </span>
-                  </div>
+                    {isEditing ? (
+                      <div className="p-3 bg-gray-50 dark:bg-[#15261D] rounded-2xl border border-emerald-200 dark:border-emerald-800 space-y-3 text-xs">
+                        <div className="font-bold text-[#0E2A1E] dark:text-white text-xs flex items-center justify-between">
+                          <span>Calibrate Agronomy Parameters</span>
+                          <span className="text-[10px] text-emerald-600 font-mono">SRS ADMIN-REQ-04</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] text-gray-500 block mb-0.5">Base Growth (Days)</label>
+                            <input
+                              type="number"
+                              value={cropFormState.baseGrowthDays || ''}
+                              onChange={(e) => setCropFormState({ ...cropFormState, baseGrowthDays: parseInt(e.target.value, 10) || 0 })}
+                              className="w-full px-2 py-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#12231A] text-xs font-bold"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-500 block mb-0.5">Daily Water Need (%)</label>
+                            <input
+                              type="number"
+                              value={cropFormState.dailyWaterNeed || ''}
+                              onChange={(e) => setCropFormState({ ...cropFormState, dailyWaterNeed: parseInt(e.target.value, 10) || 0 })}
+                              className="w-full px-2 py-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#12231A] text-xs font-bold"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-500 block mb-0.5">Market Price ($/kg)</label>
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={cropFormState.marketPricePerKg || ''}
+                              onChange={(e) => setCropFormState({ ...cropFormState, marketPricePerKg: parseFloat(e.target.value) || 0 })}
+                              className="w-full px-2 py-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#12231A] text-xs font-bold"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-500 block mb-0.5">Min Harvest (Day)</label>
+                            <input
+                              type="number"
+                              value={cropFormState.minHarvestDay || ''}
+                              onChange={(e) => setCropFormState({ ...cropFormState, minHarvestDay: parseInt(e.target.value, 10) || 0 })}
+                              className="w-full px-2 py-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#12231A] text-xs font-bold"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-2 pt-1 border-t border-gray-200 dark:border-gray-800">
+                          <button
+                            type="button"
+                            onClick={() => setEditingCropId(null)}
+                            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-gray-500 hover:text-gray-700 cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            loading={isSavingCrop}
+                            onClick={() => handleSaveCrop(crop)}
+                          >
+                            Save Parameters
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Coefficients Grid */
+                      <div className="grid grid-cols-3 gap-2 text-center text-xs pt-2 border-t border-gray-100 dark:border-gray-800">
+                        <div className="bg-gray-50 dark:bg-[#15261D] p-2 rounded-xl">
+                          <span className="text-[10px] text-gray-400 block">Growth Period</span>
+                          <strong className="text-[#0E2A1E] dark:text-white">{crop.baseGrowthDays} Days</strong>
+                        </div>
+                        <div className="bg-gray-50 dark:bg-[#15261D] p-2 rounded-xl">
+                          <span className="text-[10px] text-gray-400 block">Daily Water</span>
+                          <strong className="text-blue-600">{crop.dailyWaterNeed}% / day</strong>
+                        </div>
+                        <div className="bg-gray-50 dark:bg-[#15261D] p-2 rounded-xl">
+                          <span className="text-[10px] text-gray-400 block">Min Harvest</span>
+                          <strong className="text-amber-600">Day {crop.minHarvestDay}</strong>
+                        </div>
+                      </div>
+                    )}
 
-                  {/* Coefficients Grid */}
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs pt-2 border-t border-gray-100 dark:border-gray-800">
-                    <div className="bg-gray-50 dark:bg-[#15261D] p-2 rounded-xl">
-                      <span className="text-[10px] text-gray-400 block">Growth Period</span>
-                      <strong className="text-[#0E2A1E] dark:text-white">{crop.baseGrowthDays} Days</strong>
-                    </div>
-                    <div className="bg-gray-50 dark:bg-[#15261D] p-2 rounded-xl">
-                      <span className="text-[10px] text-gray-400 block">Daily Water</span>
-                      <strong className="text-blue-600">{crop.dailyWaterNeed}% / day</strong>
-                    </div>
-                    <div className="bg-gray-50 dark:bg-[#15261D] p-2 rounded-xl">
-                      <span className="text-[10px] text-gray-400 block">Min Harvest</span>
-                      <strong className="text-amber-600">Day {crop.minHarvestDay}</strong>
-                    </div>
+                    <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">
+                      {crop.description}
+                    </p>
                   </div>
-
-                  <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">
-                    {crop.description}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

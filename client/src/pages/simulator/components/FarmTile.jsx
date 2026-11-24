@@ -50,6 +50,12 @@ export const FarmTile = ({
     const { stageIndex, readyToHarvest } = tile.plantedCrop;
     const stages = cropDef.growthStages;
     const currentStageName = stages[stageIndex] || stages[0];
+    const minHarvest = Math.min(cropDef.minHarvestDay, cropDef.baseGrowthDays);
+    const isReadyToHarvest = Boolean(
+      readyToHarvest ||
+      tile.plantedCrop.daysPlanted >= minHarvest ||
+      stageIndex >= (stages.length - 1)
+    );
 
     // Crop color accents
     const cropColor = cropDef.color;
@@ -72,7 +78,7 @@ export const FarmTile = ({
 
         {/* Botanical Plant Representation */}
         <motion.div
-          animate={readyToHarvest ? { y: [0, -3, 0] } : {}}
+          animate={isReadyToHarvest ? { y: [0, -3, 0] } : {}}
           transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
           className="relative flex items-center justify-center my-1"
         >
@@ -106,7 +112,7 @@ export const FarmTile = ({
             {cropDef.name.replace('Organic ', '').replace('Heritage ', '').replace('Jasmine Paddy ', '')}
           </div>
           <div className="text-[10px] font-medium text-gray-600 truncate">
-            {readyToHarvest ? (
+            {isReadyToHarvest ? (
               <span className="text-amber-800 font-extrabold flex items-center justify-center gap-0.5">
                 <Sparkles className="w-2.5 h-2.5 text-amber-600" /> Ready to Harvest!
               </span>

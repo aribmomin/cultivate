@@ -396,10 +396,11 @@ export const farmSimulationService = {
     const crop = MOCK_CROPS.find((c) => c.id === tile.plantedCrop.cropId);
     if (!crop) return { success: false, reason: 'Crop definition missing.' };
 
-    if (!tile.plantedCrop.readyToHarvest && tile.plantedCrop.daysPlanted < crop.minHarvestDay) {
+    const minHarvest = Math.min(crop.minHarvestDay, crop.baseGrowthDays);
+    if (!tile.plantedCrop.readyToHarvest && tile.plantedCrop.daysPlanted < minHarvest) {
       return {
         success: false,
-        reason: `${crop.name} is only at Day ${tile.plantedCrop.daysPlanted}. Harvesting requires at least Day ${crop.minHarvestDay} (SRS SIM-REQ-11 prevents premature harvesting).`
+        reason: `${crop.name} is only at Day ${tile.plantedCrop.daysPlanted}. Harvesting requires at least Day ${minHarvest} (SRS SIM-REQ-11 prevents premature harvesting).`
       };
     }
 
@@ -578,7 +579,8 @@ export const farmSimulationService = {
       const stages = cropDef ? cropDef.growthStages : ['Seedling', 'Vegetative', 'Flowering', 'Harvest'];
       const stageProgress = daysPlanted / totalGrowthDays;
       const stageIndex = Math.min(stages.length - 1, Math.floor(stageProgress * stages.length));
-      const readyToHarvest = daysPlanted >= (cropDef?.minHarvestDay || 50);
+      const minHarvest = Math.min(cropDef?.minHarvestDay || 50, totalGrowthDays);
+      const readyToHarvest = daysPlanted >= minHarvest || stageIndex >= (stages.length - 1);
 
       // 6. Biological Health Evaluation
       let health = updatedCrop.health;
