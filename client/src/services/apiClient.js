@@ -3,15 +3,23 @@ import axios from 'axios';
 /**
  * Centralized Axios API client.
  * Configured with baseURL, request token injection, and unified error handling.
+ * Normalizes VITE_API_URL for production cloud deployments (Render, Vercel).
  */
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const getApiBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl && envUrl.trim() !== '') {
+    const trimmed = envUrl.trim().replace(/\/+$/, '');
+    return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+  }
+  return 'http://localhost:5000/api';
+};
 
 export const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: 15000, // 15 seconds to gracefully accommodate free-tier cold starts
 });
 
 // Request interceptor: Attach JWT token to outgoing requests
